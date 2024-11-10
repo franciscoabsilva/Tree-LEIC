@@ -5,23 +5,28 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import exceptions.*;
+
 public class ArvoreLEIC implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Map<Integer, Pessoa> _pessoas = new TreeMap<>();
     private int _ano = 2024;
 
-    public void adicionarPessoa(Pessoa pessoa) {
+    public void adicionarPessoa(Pessoa pessoa) throws DuplicatePersonException {
         if (_pessoas.containsKey(pessoa.getFenixId())) {
-            System.out.println("Já existe uma pessoa com este Fenix ID");
-            return;
+            throw new DuplicatePersonException(pessoa.getFenixId());
         }
         _pessoas.put(pessoa.getFenixId(), pessoa);
-        System.out.println("Pessoa adicionada com sucesso!");
     }
 
-    public void removerPessoa(int fenixId) {
+    public void removerPessoa(int fenixId) throws UnknownPersonException {
         Pessoa pessoa = _pessoas.get(fenixId);
+
+        if (pessoa == null) {
+            throw new UnknownPersonException(fenixId);
+        }
+
         Map<Integer, Pessoa> afilhados = pessoa.getAfilhados();
         Map<Integer, Pessoa> padrinhos = pessoa.getPadrinhos();
         for (Pessoa afilhado : afilhados.values()) {
@@ -31,50 +36,46 @@ public class ArvoreLEIC implements Serializable {
             padrinho.removerAfilhado(fenixId);
         }
         _pessoas.remove(fenixId);
-        System.out.println("Pessoa removida com sucesso!");
     }
 
-    public void adicionarPadrinho(int afilhadoId, int padrinhoId) {
+    public void adicionarPadrinho(int afilhadoId, int padrinhoId) throws UnknownPersonException {
         Pessoa afilhado = _pessoas.get(afilhadoId);
         Pessoa padrinho = _pessoas.get(padrinhoId);
 
         if (afilhado == null) {
-            System.out.println("Pessoa " + afilhadoId + " não encontrado");
+            throw new UnknownPersonException(afilhadoId);
         }
         if (padrinho == null) {
-            System.out.println("Pessoa " + padrinhoId + " não encontrado");
+            throw new UnknownPersonException(padrinhoId);
         }
-        if (afilhado != null && padrinho != null) {
-            afilhado.adicionarPadrinho(padrinho);
-            padrinho.adicionarAfilhado(afilhado);
-            System.out.println("Padrinho adicionado com sucesso! " + afilhado.getNome() + " é afilhado/a de " + padrinho.getNome());
-        }
+
+        afilhado.adicionarPadrinho(padrinho);
+        padrinho.adicionarAfilhado(afilhado);
     }
 
-    public void removerPadrinho(int afilhadoId, int padrinhoId) {
+    public void removerPadrinho(int afilhadoId, int padrinhoId) throws UnknownPersonException {
         Pessoa afilhado = _pessoas.get(afilhadoId);
         Pessoa padrinho = _pessoas.get(padrinhoId);
 
         if (afilhado == null) {
-            System.out.println("Pessoa " + afilhadoId + " não encontrado");
+            throw new UnknownPersonException(afilhadoId);
         }
         if (padrinho == null) {
-            System.out.println("Pessoa " + padrinhoId + " não encontrado");
+            throw new UnknownPersonException(padrinhoId);
         }
-        if (afilhado != null && padrinho != null) {
-            afilhado.removerPadrinho(padrinhoId);
-            padrinho.removerAfilhado(afilhadoId);
-            System.out.println("Padrinho removido com sucesso!");
-        }
+
+        afilhado.removerPadrinho(padrinhoId);
+        padrinho.removerAfilhado(afilhadoId);
     }
 
     public Pessoa getPessoa(int fenixId) {
         return _pessoas.get(fenixId);
     }
 
-    public void printPessoa(Pessoa pessoa) {
+    public void printPessoa(int fenixId) throws UnknownPersonException {
+        Pessoa pessoa = getPessoa(fenixId);
         if (pessoa == null) {
-            System.out.println("Pessoa não encontrada");
+            throw new UnknownPersonException(fenixId);
         } else {
             pessoa.mostrarInformacoes();
         }
@@ -84,11 +85,10 @@ public class ArvoreLEIC implements Serializable {
         return _pessoas;
     }
 
-    public void atualizarPessoaId(int fenixId, int novoFenixId) {
+    public void atualizarPessoaId(int fenixId, int novoFenixId) throws DuplicatePersonException {
 
         if (_pessoas.containsKey(novoFenixId)) {
-            System.out.println("Já existe uma pessoa com este Fenix ID");
-            return;
+            throw new DuplicatePersonException(novoFenixId);
         }
 
         Pessoa pessoa = _pessoas.get(fenixId);
@@ -126,12 +126,12 @@ public class ArvoreLEIC implements Serializable {
     }
     
 
-    public void mostrarArvoreGenealogicaCima(int fenixId) {
+    public void mostrarArvoreGenealogicaCima(int fenixId) throws UnknownPersonException {
         Pessoa pessoa = _pessoas.get(fenixId);
         if (pessoa == null) {
-            System.out.println("Pessoa não encontrada.");
-            return;
+            throw new UnknownPersonException(fenixId);
         }
+        System.out.println();
         if (pessoa.getAlcunha() != "") {
             System.out.println(pessoa.nomeComAlcunha().toUpperCase() + ":");
         } else {
@@ -163,12 +163,12 @@ public class ArvoreLEIC implements Serializable {
         }
     }
 
-    public void mostrarArvoreGenealogicaBaixo(int fenixId) {
+    public void mostrarArvoreGenealogicaBaixo(int fenixId) throws UnknownPersonException {
         Pessoa pessoa = _pessoas.get(fenixId);
         if (pessoa == null) {
-            System.out.println("Pessoa não encontrada.");
-            return;
+            throw new UnknownPersonException(fenixId);
         }
+        System.out.println();
         if (pessoa.getAlcunha() != "") {
             System.out.println(pessoa.nomeComAlcunha().toUpperCase() + ":");
         } else {

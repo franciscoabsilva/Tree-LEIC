@@ -2,6 +2,8 @@
 import java.util.Scanner;
 import java.util.InputMismatchException;
 
+import exceptions.*;
+
 public class App {
     public static void main(String[] args) throws InputMismatchException {
         Manager manager = new Manager();
@@ -11,7 +13,7 @@ public class App {
         
         Scanner scanner = new Scanner(System.in);
 
-        // caso fechem sem ser pelo menu
+        // caso fechem sem ser pelo menu TODO FAZER O SAVE DAR PRINTS NO APP E NAO NO CORE
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {manager.save();}));
 
         while (true) {
@@ -49,10 +51,14 @@ public class App {
         
                             Pessoa novaPessoa = new Pessoa(fenixId, nome, alcunha, matriculas);
                             arvore.adicionarPessoa(novaPessoa);
+                            System.out.println("\nPessoa adicionada com sucesso!");
                             break;
                         } catch (InputMismatchException e) {
-                            System.out.println("Input inválido. Tente novamente.");
+                            System.out.println("\nInput inválido. Tente novamente.");
                             scanner.nextLine();
+                            break;
+                        } catch (DuplicatePersonException e) {
+                            System.out.println("\nJá existe uma pessoa com o Fenix ID " + e.getFenixId());
                             break;
                         }
 
@@ -63,27 +69,34 @@ public class App {
         
                             System.out.print("Digite o ID do padrinho: ");
                             int padrinhoId = scanner.nextInt();
-                            scanner.nextLine();  // Consumir nova linha após nextInt()
+                            scanner.nextLine();
         
                             arvore.adicionarPadrinho(afilhadoId, padrinhoId);
+                            System.out.println("\nPadrinho adicionado com sucesso! " + arvore.getPessoa(afilhadoId).nomeComAlcunha() + " é afilhado/a de " + arvore.getPessoa(padrinhoId).nomeComAlcunha());
                             break;
                         } catch (InputMismatchException e) {
-                            System.out.println("ID inválido. Tente novamente.");
+                            System.out.println("\nID inválido. Tente novamente.");
                             scanner.nextLine();
+                            break;
+                        } catch (UnknownPersonException e) {
+                            System.out.println("\nPessoa " + e.getFenixId() + " não encontrada");
                             break;
                         }
 
-                    case 3:
+                    case 3: // TODO: FAZER O MOSTRAR PESSOA NA APP E NAO NO CORE, O CORE SO DEVOLVE AS INFORMAÇÕES
                         System.out.print("Digite o ID da pessoa que deseja mostrar: ");
                         try {
                             int pessoaId = scanner.nextInt();
-                            Pessoa pessoa = arvore.getPessoa(pessoaId);
-                            arvore.printPessoa(pessoa);
+                            System.out.println();
+                            arvore.printPessoa(pessoaId);
                             scanner.nextLine();
                             break;
                         } catch (InputMismatchException e) {
-                            System.out.println("ID inválido. Tente novamente.");
+                            System.out.println("\nID inválido. Tente novamente.");
                             scanner.nextLine();
+                            break;
+                        } catch (UnknownPersonException e) {
+                            System.out.println("Pessoa " + e.getFenixId() + " não encontrada");
                             break;
                         }
 
@@ -95,14 +108,18 @@ public class App {
                             String confirmation = scanner.next();
                             if (confirmation.equalsIgnoreCase("s")) {
                                 arvore.removerPessoa(removeFenixId);
+                                System.out.println("\nPessoa removida com sucesso!");
                             } else {
-                                System.out.println("Remoção cancelada.");
+                                System.out.println("\nRemoção cancelada.");
                             }
                             scanner.nextLine();
                             break;
                         } catch (InputMismatchException e) {
-                            System.out.println("ID inválido. Tente novamente.");
+                            System.out.println("\nID inválido. Tente novamente.");
                             scanner.nextLine();
+                            break;
+                        } catch (UnknownPersonException e) {
+                            System.out.println("\nPessoa " + e.getFenixId() + " não encontrada");
                             break;
                         }
                     case 5:
@@ -112,22 +129,32 @@ public class App {
         
                             System.out.print("Digite o ID do padrinho: ");
                             int removePadrinhoId = scanner.nextInt();
-                            scanner.nextLine();  // Consumir nova linha após nextInt()
+                            scanner.nextLine();
         
                             arvore.removerPadrinho(removerAfilhadoId, removePadrinhoId);
+                            System.out.println("\nPadrinho removido com sucesso!");
                             break;
                         } catch (InputMismatchException e) {
-                            System.out.println("ID inválido. Tente novamente.");
+                            System.out.println("\nID inválido. Tente novamente.");
                             scanner.nextLine();
+                            break;
+                        } catch (UnknownPersonException e) {
+                            System.out.println("\nPessoa " + e.getFenixId() + " não encontrada");
                             break;
                         }
 
-                    case 6:
-                        for (Pessoa pessoa : arvore.getPessoas().values()) {
-                            arvore.printPessoa(pessoa);
+                    case 6: // TODO: FAZER O MOSTRAR PESSOA NA APP E NAO NO CORE, O CORE SO DEVOLVE AS INFORMAÇÕES
+                        try {
                             System.out.println();
+                            for (int pessoaId : arvore.getPessoas().keySet()) {
+                                arvore.printPessoa(pessoaId);
+                                System.out.println();
+                            }
+                            break;
+                        } catch (UnknownPersonException e) {
+                            System.out.println("\nPessoa " + e.getFenixId() + " não encontrada");
+                            break;
                         }
-                        break;
                     case 7:
                         System.out.print("Digite o ID da pessoa para gestão: ");
                         try {
@@ -136,7 +163,7 @@ public class App {
 
                             Pessoa pessoa = arvore.getPessoa(pessoaId);
                             if (pessoa == null) {
-                                System.out.println("Pessoa não encontrada com o ID fornecido.");
+                                System.out.println("\nPessoa não encontrada com o ID fornecido.");
                                 break;
                             }
 
@@ -156,25 +183,34 @@ public class App {
 
                                 switch (opcaoEdicao) {
                                     case 1:
-                                        System.out.print("Digite o novo ID do Fenix: ");
-                                        int novoFenixId = scanner.nextInt();
-                                        scanner.nextLine();
-                                        arvore.atualizarPessoaId(pessoaId, novoFenixId);
-                                        System.out.println("ID do Fenix atualizado com sucesso.");
-                                        break;
+                                        try {
+                                            System.out.print("Digite o novo ID do Fenix: ");
+                                            int novoFenixId = scanner.nextInt();
+                                            scanner.nextLine();
+                                            arvore.atualizarPessoaId(pessoaId, novoFenixId);
+                                            System.out.println("\nID do Fenix atualizado com sucesso.");
+                                            break;
+                                        } catch (DuplicatePersonException e) {
+                                            System.out.println("\nJá existe uma pessoa com o Fenix ID " + e.getFenixId());
+                                            break;
+                                        } catch (InputMismatchException e) {
+                                            System.out.println("\nInput inválido. Tente novamente.");
+                                            scanner.nextLine();
+                                            break;
+                                        }
 
                                     case 2:
                                         System.out.print("Digite o novo Nome: ");
                                         String novoNome = scanner.nextLine();
                                         pessoa.setNome(novoNome);
-                                        System.out.println("Nome atualizado com sucesso.");
+                                        System.out.println("\nNome atualizado com sucesso.");
                                         break;
 
                                     case 3:
                                         System.out.print("Digite a nova Alcunha: ");
                                         String novaAlcunha = scanner.nextLine();
                                         pessoa.setAlcunha(novaAlcunha);
-                                        System.out.println("Alcunha atualizada com sucesso.");
+                                        System.out.println("\nAlcunha atualizada com sucesso.");
                                         break;
 
                                     case 4:
@@ -183,10 +219,10 @@ public class App {
                                             int novaMatricula = scanner.nextInt();
                                             scanner.nextLine();
                                             pessoa.setMatriculas(novaMatricula);
-                                            System.out.println("Matrícula atualizada com sucesso.");
+                                            System.out.println("\nMatrícula atualizada com sucesso.");
                                             break;
                                         } catch (InputMismatchException e) {
-                                            System.out.println("Input inválido. Tente novamente.");
+                                            System.out.println("\nInput inválido. Tente novamente.");
                                             scanner.nextLine();
                                             break;
                                         }
@@ -196,10 +232,14 @@ public class App {
                                             int padrinhoId = scanner.nextInt();
                                             scanner.nextLine();
                                             arvore.adicionarPadrinho(pessoaId, padrinhoId);
+                                            System.out.println("\nPadrinho adicionado com sucesso! " + arvore.getPessoa(pessoaId).nomeComAlcunha() + " é afilhado/a de " + arvore.getPessoa(padrinhoId).nomeComAlcunha());
                                             break;
                                         } catch (InputMismatchException e) {
-                                            System.out.println("ID inválido. Tente novamente.");
+                                            System.out.println("\nID inválido. Tente novamente.");
                                             scanner.nextLine();
+                                            break;
+                                        } catch (UnknownPersonException e) {
+                                            System.out.println("\nPessoa " + e.getFenixId() + " não encontrada");
                                             break;
                                         }
                                     case 6:
@@ -208,10 +248,14 @@ public class App {
                                             int afilhadoId = scanner.nextInt();
                                             scanner.nextLine();
                                             arvore.adicionarPadrinho(afilhadoId, pessoaId);
+                                            System.out.println("\nPadrinho adicionado com sucesso! " + arvore.getPessoa(afilhadoId).nomeComAlcunha() + " é afilhado/a de " + arvore.getPessoa(pessoaId).nomeComAlcunha());
                                             break;
                                         } catch (InputMismatchException e) {
-                                            System.out.println("ID inválido. Tente novamente.");
+                                            System.out.println("\nID inválido. Tente novamente.");
                                             scanner.nextLine();
+                                            break;
+                                        } catch (UnknownPersonException e) {
+                                            System.out.println("\nPessoa " + e.getFenixId() + " não encontrada");
                                             break;
                                         }
                                     case 0:
@@ -219,12 +263,12 @@ public class App {
                                         break;
 
                                     default:
-                                        System.out.println("Opção inválida. Tente novamente.");
+                                        System.out.println("\nOpção inválida. Tente novamente.");
                                 }
                             }
                         } catch (InputMismatchException e) {
-                            System.out.println("ID inválido. Tente novamente.");
-                            scanner.nextLine();  // Consumir a entrada inválida
+                            System.out.println("\nID inválido. Tente novamente.");
+                            scanner.nextLine();
                         }
                         break;
 
@@ -245,12 +289,12 @@ public class App {
                                     switch (opcaoAno) {
                                         case 1:
                                             arvore.avancarAno();
-                                            System.out.println("Ano avançado com sucesso");
+                                            System.out.println("\nAno avançado com sucesso");
                                             break;
 
                                         case 2:
                                             arvore.recuarAno();
-                                            System.out.println("Ano recuado com sucesso");
+                                            System.out.println("\nAno recuado com sucesso");
                                             break;
 
                                         case 0:
@@ -258,11 +302,11 @@ public class App {
                                             break;
 
                                         default:
-                                            System.out.println("Opção inválida. Tente novamente.");
+                                            System.out.println("\nOpção inválida. Tente novamente.");
                                     }
                                 } catch (InputMismatchException e) {
-                                    System.out.println("Input inválido. Tente novamente.");
-                                    scanner.nextLine();  // Consumir a entrada inválida
+                                    System.out.println("\nInput inválido. Tente novamente.");
+                                    scanner.nextLine();
                                 }
                             }
                             break;
@@ -274,8 +318,11 @@ public class App {
                             arvore.mostrarArvoreGenealogicaCima(pessoaId);
                             break;
                         } catch (InputMismatchException e) {
-                            System.out.println("ID inválido. Tente novamente.");
+                            System.out.println("\nID inválido. Tente novamente.");
                             scanner.nextLine();
+                            break;
+                        } catch (UnknownPersonException e) {
+                            System.out.println("\nPessoa " + e.getFenixId() + " não encontrada");
                             break;
                         }
                     case 10:
@@ -286,12 +333,15 @@ public class App {
                             arvore.mostrarArvoreGenealogicaBaixo(pessoaId);
                             break;
                         } catch (InputMismatchException e) {
-                            System.out.println("ID inválido. Tente novamente.");
+                            System.out.println("\nID inválido. Tente novamente.");
                             scanner.nextLine();
+                            break;
+                        } catch (UnknownPersonException e) {
+                            System.out.println("\nPessoa " + e.getFenixId() + " não encontrada");
                             break;
                         }
 
-                    case 11:
+                    case 11: // TODO METER PRINTS NA APP
                     for (Pessoa pessoa : arvore.getPessoas().values()) {
                         pessoa.printPessoaId();
                     }
@@ -304,10 +354,10 @@ public class App {
                         break;
 
                     default:
-                        System.out.println("Opção inválida. Tente novamente.");
+                        System.out.println("\nOpção inválida. Tente novamente.");
                 }
             } catch (InputMismatchException e) {
-                System.out.println("Input inválido. Tente novamente.");
+                System.out.println("\nInput inválido. Tente novamente.");
                 scanner.nextLine();
                 continue;
             }
