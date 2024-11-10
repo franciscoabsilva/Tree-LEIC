@@ -72,7 +72,7 @@ public class App {
                             scanner.nextLine();
         
                             arvore.adicionarPadrinho(afilhadoId, padrinhoId);
-                            System.out.println("\nPadrinho adicionado com sucesso! " + arvore.getPessoa(afilhadoId).nomeComAlcunha() + " é afilhado/a de " + arvore.getPessoa(padrinhoId).nomeComAlcunha());
+                            System.out.println("\nPadrinho adicionado com sucesso! " + arvore.getPessoa(afilhadoId).getNome() + " é afilhado/a de " + arvore.getPessoa(padrinhoId).getNome());
                             break;
                         } catch (InputMismatchException e) {
                             System.out.println("\nID inválido. Tente novamente.");
@@ -232,7 +232,7 @@ public class App {
                                             int padrinhoId = scanner.nextInt();
                                             scanner.nextLine();
                                             arvore.adicionarPadrinho(pessoaId, padrinhoId);
-                                            System.out.println("\nPadrinho adicionado com sucesso! " + arvore.getPessoa(pessoaId).nomeComAlcunha() + " é afilhado/a de " + arvore.getPessoa(padrinhoId).nomeComAlcunha());
+                                            System.out.println("\nPadrinho adicionado com sucesso! " + arvore.getPessoa(pessoaId).getNome() + " é afilhado/a de " + arvore.getPessoa(padrinhoId).getNome());
                                             break;
                                         } catch (InputMismatchException e) {
                                             System.out.println("\nID inválido. Tente novamente.");
@@ -248,7 +248,7 @@ public class App {
                                             int afilhadoId = scanner.nextInt();
                                             scanner.nextLine();
                                             arvore.adicionarPadrinho(afilhadoId, pessoaId);
-                                            System.out.println("\nPadrinho adicionado com sucesso! " + arvore.getPessoa(afilhadoId).nomeComAlcunha() + " é afilhado/a de " + arvore.getPessoa(pessoaId).nomeComAlcunha());
+                                            System.out.println("\nPadrinho adicionado com sucesso! " + arvore.getPessoa(afilhadoId).getNome() + " é afilhado/a de " + arvore.getPessoa(pessoaId).getNome());
                                             break;
                                         } catch (InputMismatchException e) {
                                             System.out.println("\nID inválido. Tente novamente.");
