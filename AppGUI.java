@@ -20,16 +20,19 @@ public class AppGUI extends JFrame {
     private JPanel panelGestaoPessoa; // Painel de gestão de pessoa
     private Pessoa pessoaSelecionada; // Pessoa selecionada para gestão
     
+    private String currentMode; // Modo atual de visualização da árvore
     private Stack<Pessoa> historico = new Stack<>(); // historico de arvores visitadas
 
     public AppGUI() {
 
         frame = new JFrame();
-
+        
         frame.setTitle("Arvore LEIC"); // titulo da janela
         frame.setSize(800, 600); // tamanho da janela
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // fecha a janela
         frame.setLocationRelativeTo(null);  // centralizar a janela
+        ImageIcon icon = new ImageIcon("icon.png");
+        frame.setIconImage(icon.getImage());
 
         manager = new Manager();
         manager.load();
@@ -615,6 +618,7 @@ public class AppGUI extends JFrame {
                 }
 
                 historico.clear();
+                currentMode = null;
 
                 // Mostra a árvore para a pessoa selecionada
                 arvoreGenealogicaGUI(pessoa);
@@ -638,30 +642,86 @@ public class AppGUI extends JFrame {
             historico.push(pessoaRaiz);
         }
 
+
+        // Menu inicial para escolher modo de visualização
+        if (currentMode == null) {
+            JDialog modeDialog = new JDialog(frame, "Modo de Visualização", true);
+            modeDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            modeDialog.setSize(400, 200);
+            modeDialog.setLocationRelativeTo(frame);
+            modeDialog.setLayout(new BorderLayout());
+
+            JPanel panel = new JPanel();
+            panel.setLayout(new GridLayout(2, 1));
+
+            // Botão "Padrinho"
+            JButton btnPadrinho = new JButton("Padrinho");
+            btnPadrinho.addActionListener(e -> {
+                currentMode = "padrinho";
+                modeDialog.dispose();
+                arvoreGenealogicaGUI(pessoaRaiz);
+            });
+
+            // Botão "Afilhado"
+            JButton btnAfilhado = new JButton("Afilhado");
+            btnAfilhado.addActionListener(e -> {
+                currentMode = "afilhado";
+                modeDialog.dispose();
+                arvoreGenealogicaGUI(pessoaRaiz);
+            });
+
+            panel.add(btnPadrinho);
+            panel.add(btnAfilhado);
+
+            modeDialog.add(panel, BorderLayout.CENTER);
+            modeDialog.setVisible(true);
+
+            return;
+        }
+
         // Adiciona o painel principal que desenha a árvore genealógica
-        JScrollPane scrollPane = new JScrollPane(desenhaArvore(pessoaRaiz, new HashSet<>()));
+        JScrollPane scrollPane = new JScrollPane(desenhaArvore(pessoaRaiz, new HashSet<>(), currentMode));
         JPanel contentPanel = butoesArvore(scrollPane);
         frame.setContentPane(contentPanel);
         frame.revalidate();
         frame.repaint();
     }
 
-    private JPanel desenhaArvore(Pessoa pessoa, Set<Pessoa> visitados) {
+    private JPanel desenhaArvore(Pessoa pessoa, Set<Pessoa> visitados, String mode) {
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
 
         // Painel para afilhados
-        if (!visitados.contains(pessoa)) {
-            Map<Integer, Pessoa> afilhados = pessoa.getAfilhados();
-            if (!afilhados.isEmpty()) {
-                JPanel panelAfilhados = new JPanel();
-                panelAfilhados.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 20));
+        if (mode.equals("afilhado")) {
+            if (!visitados.contains(pessoa)) {
+                Map<Integer, Pessoa> afilhados = pessoa.getAfilhados();
+                if (!afilhados.isEmpty()) {
+                    JPanel panelAfilhados = new JPanel();
+                    panelAfilhados.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 20));
 
-                for (Pessoa afilhado : afilhados.values()) {
-                    panelAfilhados.add(desenhaArvore(afilhado, visitados));
+                    for (Pessoa afilhado : afilhados.values()) {
+                        panelAfilhados.add(desenhaArvore(afilhado, visitados, "afilhado"));
+                    }
+
+                    panel.add(panelAfilhados, BorderLayout.CENTER);
                 }
+            }
+        }
 
-                panel.add(panelAfilhados, BorderLayout.CENTER);
+        if (mode.equals("padrinho")) {
+            // Painel para padrinhos
+            if (!visitados.contains(pessoa)) {
+                Map<Integer, Pessoa> padrinhos = pessoa.getPadrinhos();
+                if (!padrinhos.isEmpty()) {
+                    JPanel panelPadrinhos = new JPanel();
+                    panelPadrinhos.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 20));
+
+                    for (Pessoa padrinho : padrinhos.values()) {
+                        panelPadrinhos.add(desenhaArvore(padrinho, visitados, "padrinho"));
+                    }
+
+                    panel.add(panelPadrinhos, BorderLayout.CENTER);
+                }
             }
         }
 
@@ -687,30 +747,56 @@ public class AppGUI extends JFrame {
         // Painel principal
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.add(scrollPane, BorderLayout.CENTER);
-
-        JPanel panelBotoes = new JPanel();
-        panelBotoes.setLayout(new BoxLayout(panelBotoes, BoxLayout.X_AXIS)); // Alinha os botões na horizontal
     
+        JPanel panelBotoes = new JPanel();
+        panelBotoes.setLayout(new BoxLayout(panelBotoes, BoxLayout.X_AXIS)); // Alinha os botões na vertical
+        
+        // Painel com botões Menu Principal e Voltar
+        JPanel panelMenuVoltar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        
         // Botão "Menu Principal"
-        JPanel panelMenu = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton btnMenuPrincipal = new JButton("Menu Principal");
-        btnMenuPrincipal.setPreferredSize(new Dimension(200, 50));
+        btnMenuPrincipal.setPreferredSize(new Dimension(180, 50));
         btnMenuPrincipal.setFont(new Font("Arial", Font.BOLD, 16)); 
         btnMenuPrincipal.addActionListener(e -> voltarAoMenuPrincipal());
-        panelMenu.add(btnMenuPrincipal);
-        panelBotoes.add(panelMenu);
-
+        panelMenuVoltar.add(btnMenuPrincipal);
+    
         // Botão "Voltar"
-        JPanel panelVoltar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnVoltar = new JButton("Voltar");
-        btnVoltar.setPreferredSize(new Dimension(200, 50)); 
+        btnVoltar.setPreferredSize(new Dimension(180, 50)); 
         btnVoltar.setFont(new Font("Arial", Font.BOLD, 16)); 
         btnVoltar.addActionListener(e -> voltarArvore());
-        panelVoltar.add(btnVoltar);
-        panelBotoes.add(panelVoltar);
+        panelMenuVoltar.add(btnVoltar);
+    
+        panelBotoes.add(panelMenuVoltar);  // Adiciona os dois botões no painel principal
+
+        // Painel com botões Padrinhos e Afilhados
+        JPanel panelPadrinhosAfilhados = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        
+        // Botão "Padrinhos"
+        JButton btnPadrinhos = new JButton("Padrinhos");
+        btnPadrinhos.setPreferredSize(new Dimension(180, 50));
+        btnPadrinhos.setFont(new Font("Arial", Font.BOLD, 16));
+        btnPadrinhos.addActionListener(e -> {
+            currentMode = "padrinho";
+            arvoreGenealogicaGUI(historico.peek());
+        });
+        panelPadrinhosAfilhados.add(btnPadrinhos);
+    
+        // Botão "Afilhados"
+        JButton btnAfilhados = new JButton("Afilhados");
+        btnAfilhados.setPreferredSize(new Dimension(180, 50));
+        btnAfilhados.setFont(new Font("Arial", Font.BOLD, 16));
+        btnAfilhados.addActionListener(e -> {
+            currentMode = "afilhado";
+            arvoreGenealogicaGUI(historico.peek());
+        });
+        panelPadrinhosAfilhados.add(btnAfilhados);
+    
+        panelBotoes.add(panelPadrinhosAfilhados);
         
         mainPanel.add(panelBotoes, BorderLayout.SOUTH);
-
+    
         return mainPanel;
     }
 
