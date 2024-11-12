@@ -630,7 +630,6 @@ public class AppGUI extends JFrame {
     }
 
     public void arvoreGenealogicaGUI(Pessoa pessoaRaiz) {
-        frame.setTitle("Árvore Genealógica de " + currentMode + " de " + pessoaRaiz.nomeComAlcunha()); 
         
         //Histórico para o botão de voltar
         if (!historico.isEmpty()) {
@@ -678,6 +677,8 @@ public class AppGUI extends JFrame {
 
             return;
         }
+
+        frame.setTitle("Árvore Genealógica de " + currentMode + " de " + pessoaRaiz.nomeComAlcunha()); 
 
         // Adiciona o painel principal que desenha a árvore genealógica
         JScrollPane scrollPane = new JScrollPane(desenhaArvore(pessoaRaiz, new HashSet<>(), currentMode));
