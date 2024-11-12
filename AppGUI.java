@@ -189,7 +189,7 @@ public class AppGUI extends JFrame {
                         }
     
                         arvore.adicionarPadrinho(afilhadoId, padrinhoId);
-                        JOptionPane.showMessageDialog(dialog, arvore.getPessoa(afilhadoId).nomeComAlcunha() + " é afilhado de " + arvore.getPessoa(padrinhoId).nomeComAlcunha());
+                        JOptionPane.showMessageDialog(dialog, arvore.getPessoa(afilhadoId).nomeComAlcunha() + " é afilhado/a de " + arvore.getPessoa(padrinhoId).nomeComAlcunha());
                         dialog.dispose(); // Fecha a janela após adicionar
                     } catch (NumberFormatException ex) {
                         JOptionPane.showMessageDialog(dialog, "ID do Afilhado e ID do Padrinho devem ser números inteiros.", "Erro de Entrada", JOptionPane.ERROR_MESSAGE);
