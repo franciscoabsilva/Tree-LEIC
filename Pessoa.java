@@ -124,6 +124,9 @@ public class Pessoa implements Serializable {
     }
 
     public String nomeComAlcunha() {
+        if (_alcunha.isEmpty()) {
+            return _nome;
+        }
         // Dividir o nome em palavras usando o espaço como delimitador
         String[] partes = _nome.split(" ", 2);
         
@@ -150,5 +153,24 @@ public class Pessoa implements Serializable {
 
     public void recuarAno() {
         _matriculas--;
+    }
+
+
+    public String getNomesPadrinhos() {
+        StringBuilder nomes = new StringBuilder();
+        for (Pessoa padrinho : getPadrinhos().values()) {
+            nomes.append(padrinho.getNome()).append(", ");
+        }
+        if (nomes.length() > 0) nomes.setLength(nomes.length() - 2); // Remove a última vírgula
+        return nomes.toString();
+    }
+
+    public String getNomesAfilhados() {
+        StringBuilder nomes = new StringBuilder();
+        for (Pessoa afilhado : getAfilhados().values()) {
+            nomes.append(afilhado.getNome()).append(", ");
+        }
+        if (nomes.length() > 0) nomes.setLength(nomes.length() - 2); // Remove a última vírgula
+        return nomes.toString();
     }
 }

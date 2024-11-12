@@ -24,11 +24,11 @@ public class App {
             System.out.println("4. Remover Pessoa");
             System.out.println("5. Remover Padrinho");
             System.out.println("6. Mostrar Lista de Todas as Pessoas");
-            System.out.println("7. Menu Gestão de Pessoa");
-            System.out.println("8. Menu Gestão do Ano");
-            System.out.println("9. Mostrar Arvore Genealógica Acima Pessoa");
-            System.out.println("10. Mostrar Arvore Genealógica Abaixo Pessoa");
-            System.out.println("11. Lista Pessoas Números");
+            System.out.println("7. Lista Pessoas Números");
+            System.out.println("8. Menu Gestão de Pessoa");
+            System.out.println("9. Menu Gestão do Ano");
+            System.out.println("10. Mostrar Arvore Genealógica Acima Pessoa");
+            System.out.println("11. Mostrar Arvore Genealógica Abaixo Pessoa");
             System.out.println("0. Sair");
             System.out.print("Escolha uma opção: ");
             try {
@@ -155,7 +155,12 @@ public class App {
                             System.out.println("\nPessoa " + e.getFenixId() + " não encontrada");
                             break;
                         }
-                    case 7:
+                    case 7: // TODO METER PRINTS NA APP
+                        for (Pessoa pessoa : arvore.getPessoas().values()) {
+                            pessoa.printPessoaId();
+                        }
+                        break;
+                    case 8:
                         System.out.print("Digite o ID da pessoa para gestão: ");
                         try {
                             int pessoaId = scanner.nextInt();
@@ -272,45 +277,45 @@ public class App {
                         }
                         break;
 
-                        case 8:
-                            boolean gerenciarAno = true;
-                            while (gerenciarAno) {
-                                System.out.println("\n--- Gestão do Ano ---");
-                                System.out.println("Ano atual: " + arvore.getAno() + "/" + (arvore.getAno()+1));
-                                System.out.println("1. Avançar Ano");
-                                System.out.println("2. Recuar Ano");
-                                System.out.println("0. Voltar ao Menu Principal");
-                                System.out.print("Escolha uma opção: ");
-
-                                try {
-                                    int opcaoAno = scanner.nextInt();
-                                    scanner.nextLine();  // Consumir nova linha após nextInt()
-
-                                    switch (opcaoAno) {
-                                        case 1:
-                                            arvore.avancarAno();
-                                            System.out.println("\nAno avançado com sucesso");
-                                            break;
-
-                                        case 2:
-                                            arvore.recuarAno();
-                                            System.out.println("\nAno recuado com sucesso");
-                                            break;
-
-                                        case 0:
-                                            gerenciarAno = false;
-                                            break;
-
-                                        default:
-                                            System.out.println("\nOpção inválida. Tente novamente.");
-                                    }
-                                } catch (InputMismatchException e) {
-                                    System.out.println("\nInput inválido. Tente novamente.");
-                                    scanner.nextLine();
-                                }
-                            }
-                            break;
                     case 9:
+                        boolean gerenciarAno = true;
+                        while (gerenciarAno) {
+                            System.out.println("\n--- Gestão do Ano ---");
+                            System.out.println("Ano atual: " + arvore.getAno() + "/" + (arvore.getAno()+1));
+                            System.out.println("1. Avançar Ano");
+                            System.out.println("2. Recuar Ano");
+                            System.out.println("0. Voltar ao Menu Principal");
+                            System.out.print("Escolha uma opção: ");
+
+                            try {
+                                int opcaoAno = scanner.nextInt();
+                                scanner.nextLine();  // Consumir nova linha após nextInt()
+
+                                switch (opcaoAno) {
+                                    case 1:
+                                        arvore.avancarAno();
+                                        System.out.println("\nAno avançado com sucesso");
+                                        break;
+
+                                    case 2:
+                                        arvore.recuarAno();
+                                        System.out.println("\nAno recuado com sucesso");
+                                        break;
+
+                                    case 0:
+                                        gerenciarAno = false;
+                                        break;
+
+                                    default:
+                                        System.out.println("\nOpção inválida. Tente novamente.");
+                                }
+                            } catch (InputMismatchException e) {
+                                System.out.println("\nInput inválido. Tente novamente.");
+                                scanner.nextLine();
+                            }
+                        }
+                        break;
+                    case 10:
                         System.out.print("Digite o ID da pessoa para mostrar a árvore genealógica: ");
                         try {
                             int pessoaId = scanner.nextInt();
@@ -325,7 +330,7 @@ public class App {
                             System.out.println("\nPessoa " + e.getFenixId() + " não encontrada");
                             break;
                         }
-                    case 10:
+                    case 11:
                         System.out.print("Digite o ID da pessoa para mostrar a árvore genealógica: ");
                         try {
                             int pessoaId = scanner.nextInt();
@@ -340,12 +345,6 @@ public class App {
                             System.out.println("\nPessoa " + e.getFenixId() + " não encontrada");
                             break;
                         }
-
-                    case 11: // TODO METER PRINTS NA APP
-                    for (Pessoa pessoa : arvore.getPessoas().values()) {
-                        pessoa.printPessoaId();
-                    }
-                    break;
 
                     case 0:
                         System.out.println("Saindo e salvando...");

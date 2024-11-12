@@ -72,6 +72,14 @@ public class ArvoreLEIC implements Serializable {
         return _pessoas.get(fenixId);
     }
 
+    public Pessoa getPessoaExistente(int fenixId) throws UnknownPersonException {
+        Pessoa pessoa = getPessoa(fenixId);
+        if (pessoa == null) {
+            throw new UnknownPersonException(fenixId);
+        }
+        return pessoa;
+    }
+
     public void printPessoa(int fenixId) throws UnknownPersonException {
         Pessoa pessoa = getPessoa(fenixId);
         if (pessoa == null) {
@@ -79,6 +87,62 @@ public class ArvoreLEIC implements Serializable {
         } else {
             pessoa.mostrarInformacoes();
         }
+    }
+
+    public String getPessoaInfo(int fenixId) throws UnknownPersonException {
+        Pessoa pessoa = getPessoa(fenixId);
+        if (pessoa == null) {
+            throw new UnknownPersonException(fenixId);
+        }
+        
+        StringBuilder info = new StringBuilder();
+        info.append("Fenix ID: ").append(pessoa.getFenixId()).append("\n")
+            .append("Nome: ").append(pessoa.getNome()).append("\n")
+            .append("Alcunha: ").append(pessoa.getAlcunha()).append("\n")
+            .append("Matrícula: ").append(pessoa.getMatriculas()).append("\n");
+    
+        // Adicionando os padrinhos
+        info.append("Padrinhos: ");
+        int lineLengthPadrinhos = 10;
+        for (Pessoa padrinho : pessoa.getPadrinhos().values()) {
+            String nomeComAlcunha = padrinho.nomeComAlcunha() + ", ";
+
+            if (lineLengthPadrinhos + nomeComAlcunha.length() > 70) {
+                info.append("\n                    ");  // Adiciona nova linha e tabulação
+                lineLengthPadrinhos = 0;
+            }
+
+            info.append(nomeComAlcunha);
+            lineLengthPadrinhos += nomeComAlcunha.length();
+        }
+        if (!pessoa.getPadrinhos().isEmpty()) {
+            info.setLength(info.length() - 2);  // Remover a última vírgula e espaço
+        }
+        info.append("\n");
+    
+        // Adicionando os afilhados
+        info.append("Afilhados: ");
+        int lineLengthAfilhados = 10;
+
+        for (Pessoa afilhado : pessoa.getAfilhados().values()) {
+            String nomeComAlcunha = afilhado.nomeComAlcunha() + ", ";
+            
+            // Maximo caracteres por linha
+            if (lineLengthAfilhados + nomeComAlcunha.length() > 70) {
+                info.append("\n                    ");  // Adiciona nova linha e tabulação
+                lineLengthAfilhados = 0;
+            }
+
+            info.append(nomeComAlcunha);
+            lineLengthAfilhados += nomeComAlcunha.length();
+        }
+
+        if (!pessoa.getAfilhados().isEmpty()) {
+            info.setLength(info.length() - 2);  // Remover a última vírgula e espaço
+        }
+        info.append("\n");
+    
+        return info.toString();
     }
 
     public Map<Integer, Pessoa> getPessoas() {
@@ -92,18 +156,18 @@ public class ArvoreLEIC implements Serializable {
         }
 
         Pessoa pessoa = _pessoas.get(fenixId);
+        pessoa.setFenixId(novoFenixId);
 
         for (Pessoa afilhado : pessoa.getAfilhados().values()) {
             afilhado.removerPadrinho(fenixId);
             afilhado.adicionarPadrinho(pessoa);
         }
         for (Pessoa padrinho : pessoa.getPadrinhos().values()) {
-                padrinho.removerAfilhado(fenixId);
-                padrinho.adicionarAfilhado(pessoa);
+            padrinho.removerAfilhado(fenixId);
+            padrinho.adicionarAfilhado(pessoa);
         }
 
         _pessoas.remove(fenixId);
-        pessoa.setFenixId(novoFenixId);
         _pessoas.put(novoFenixId, pessoa);
     }
 
@@ -199,5 +263,5 @@ public class ArvoreLEIC implements Serializable {
                 exibirAfilhadosRecursivo(afilhado, nivel + 1, visitados);  // Recursão com aumento do nível
             }
         }
-    }
+    }    
 }
