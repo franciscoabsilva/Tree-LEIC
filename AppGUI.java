@@ -630,7 +630,7 @@ public class AppGUI extends JFrame {
     }
 
     public void arvoreGenealogicaGUI(Pessoa pessoaRaiz) {
-        frame.setTitle("Árvore Genealógica"); 
+        frame.setTitle("Árvore Genealógica de " + currentMode + " de " + pessoaRaiz.nomeComAlcunha()); 
         
         //Histórico para o botão de voltar
         if (!historico.isEmpty()) {
@@ -655,17 +655,17 @@ public class AppGUI extends JFrame {
             panel.setLayout(new GridLayout(2, 1));
 
             // Botão "Padrinho"
-            JButton btnPadrinho = new JButton("Padrinho");
+            JButton btnPadrinho = new JButton("Padrinhos");
             btnPadrinho.addActionListener(e -> {
-                currentMode = "padrinho";
+                currentMode = "Padrinhos";
                 modeDialog.dispose();
                 arvoreGenealogicaGUI(pessoaRaiz);
             });
 
             // Botão "Afilhado"
-            JButton btnAfilhado = new JButton("Afilhado");
+            JButton btnAfilhado = new JButton("Afilhados");
             btnAfilhado.addActionListener(e -> {
-                currentMode = "afilhado";
+                currentMode = "Afilhados";
                 modeDialog.dispose();
                 arvoreGenealogicaGUI(pessoaRaiz);
             });
@@ -692,7 +692,7 @@ public class AppGUI extends JFrame {
         panel.setLayout(new BorderLayout());
 
         // Painel para afilhados
-        if (mode.equals("afilhado")) {
+        if (mode.equals("Afilhados")) {
             if (!visitados.contains(pessoa)) {
                 Map<Integer, Pessoa> afilhados = pessoa.getAfilhados();
                 if (!afilhados.isEmpty()) {
@@ -700,7 +700,7 @@ public class AppGUI extends JFrame {
                     panelAfilhados.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 20));
 
                     for (Pessoa afilhado : afilhados.values()) {
-                        panelAfilhados.add(desenhaArvore(afilhado, visitados, "afilhado"));
+                        panelAfilhados.add(desenhaArvore(afilhado, visitados, "Afilhados"));
                     }
 
                     panel.add(panelAfilhados, BorderLayout.CENTER);
@@ -708,7 +708,7 @@ public class AppGUI extends JFrame {
             }
         }
 
-        if (mode.equals("padrinho")) {
+        if (mode.equals("Padrinhos")) {
             // Painel para padrinhos
             if (!visitados.contains(pessoa)) {
                 Map<Integer, Pessoa> padrinhos = pessoa.getPadrinhos();
@@ -717,7 +717,7 @@ public class AppGUI extends JFrame {
                     panelPadrinhos.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 20));
 
                     for (Pessoa padrinho : padrinhos.values()) {
-                        panelPadrinhos.add(desenhaArvore(padrinho, visitados, "padrinho"));
+                        panelPadrinhos.add(desenhaArvore(padrinho, visitados, "Padrinhos"));
                     }
 
                     panel.add(panelPadrinhos, BorderLayout.CENTER);
@@ -778,7 +778,7 @@ public class AppGUI extends JFrame {
         btnPadrinhos.setPreferredSize(new Dimension(180, 50));
         btnPadrinhos.setFont(new Font("Arial", Font.BOLD, 16));
         btnPadrinhos.addActionListener(e -> {
-            currentMode = "padrinho";
+            currentMode = "Padrinhos";
             arvoreGenealogicaGUI(historico.peek());
         });
         panelPadrinhosAfilhados.add(btnPadrinhos);
@@ -788,7 +788,7 @@ public class AppGUI extends JFrame {
         btnAfilhados.setPreferredSize(new Dimension(180, 50));
         btnAfilhados.setFont(new Font("Arial", Font.BOLD, 16));
         btnAfilhados.addActionListener(e -> {
-            currentMode = "afilhado";
+            currentMode = "Afilhados";
             arvoreGenealogicaGUI(historico.peek());
         });
         panelPadrinhosAfilhados.add(btnAfilhados);
