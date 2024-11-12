@@ -627,7 +627,8 @@ public class AppGUI extends JFrame {
 
     public void arvoreGenealogicaGUI(Pessoa pessoaRaiz) {
         frame.setTitle("Árvore Genealógica"); 
-
+        
+        //Histórico para o botão de voltar
         if (!historico.isEmpty()) {
             Pessoa pessoaAnterior = historico.peek();
             if (pessoaAnterior != pessoaRaiz) {
