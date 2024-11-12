@@ -144,49 +144,62 @@ public class AppGUI extends JFrame {
     }
 
     private void adicionarPadrinho() {
-        // Criando a janela de entrada personalizada
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(3, 2)); // 3 linhas, 2 colunas
-    
-        // Criando os campos de entrada
+        // Painel de entrada para IDs do Afilhado e Padrinho
+        JPanel panel = new JPanel(new GridLayout(3, 2));
         JTextField afilhadoIdField = new JTextField();
         JTextField padrinhoIdField = new JTextField();
-    
-        // Labels para os campos
         panel.add(new JLabel("ID do Afilhado:"));
         panel.add(afilhadoIdField);
         panel.add(new JLabel("ID do Padrinho:"));
         panel.add(padrinhoIdField);
     
-        // Criando o botão de OK
-        int option = JOptionPane.showConfirmDialog(this, panel, "Adicionar Padrinho", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        // Criar JOptionPane
+        JOptionPane optionPane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
     
-        // Se o usuário clicou em OK
-        if (option == JOptionPane.OK_OPTION) {
-            try {
-                // Pegando os valores dos campos
-                String afilhadoIdStr = afilhadoIdField.getText();
-                String padrinhoIdStr = padrinhoIdField.getText();
+        // Configurar JDialog com JOptionPane
+        JDialog dialog = optionPane.createDialog("Adicionar Padrinho");
+        dialog.setModal(false);  // Torna o diálogo não modal
+        dialog.setLocationRelativeTo(frame);  // Centraliza em relação à janela principal
     
-                // Validando o ID do Fenix e Matrícula
-                if (afilhadoIdStr.isEmpty() || padrinhoIdStr.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "O ID do Afilhado e ID do Padrinho são obrigatórios!", "Erro", JOptionPane.ERROR_MESSAGE);
-                    return;
+        // Propriedade para lidar com ação do botão OK/Cancelar
+        optionPane.addPropertyChangeListener(e -> {
+            if (JOptionPane.VALUE_PROPERTY.equals(e.getPropertyName())) {
+                int value = (int) optionPane.getValue();
+    
+                if (value == JOptionPane.OK_OPTION) {
+                    // Executar lógica para adicionar padrinho
+                    try {
+                        String afilhadoIdStr = afilhadoIdField.getText();
+                        String padrinhoIdStr = padrinhoIdField.getText();
+    
+                        if (afilhadoIdStr.isEmpty() || padrinhoIdStr.isEmpty()) {
+                            JOptionPane.showMessageDialog(dialog, "O ID do Afilhado e do Padrinho são obrigatórios!", "Erro", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+    
+                        int afilhadoId = Integer.parseInt(afilhadoIdStr);
+                        int padrinhoId = Integer.parseInt(padrinhoIdStr);
+    
+                        if (afilhadoId == padrinhoId) {
+                            JOptionPane.showMessageDialog(dialog, "Uma pessoa não pode ser padrinho de si mesma!", "Erro", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+    
+                        arvore.adicionarPadrinho(afilhadoId, padrinhoId);
+                        JOptionPane.showMessageDialog(dialog, arvore.getPessoa(afilhadoId).nomeComAlcunha() + " é afilhado de " + arvore.getPessoa(padrinhoId).nomeComAlcunha());
+                        dialog.dispose(); // Fecha a janela após adicionar
+                    } catch (NumberFormatException ex) {
+                        JOptionPane.showMessageDialog(dialog, "ID do Afilhado e ID do Padrinho devem ser números inteiros.", "Erro de Entrada", JOptionPane.ERROR_MESSAGE);
+                    } catch (UnknownPersonException ex) {
+                        JOptionPane.showMessageDialog(dialog, "Pessoa com ID " + ex.getFenixId() + " não encontrada", "Erro: Pessoa Desconhecida", JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
+                    dialog.dispose(); // Fecha a janela se Cancelar for clicado
                 }
+            }
+        });
     
-                int afilhadoId = Integer.parseInt(afilhadoIdStr);
-                int padrinhoId = Integer.parseInt(padrinhoIdStr);
-    
-                arvore.adicionarPadrinho(afilhadoId, padrinhoId);
-    
-                JOptionPane.showMessageDialog(this, "Padrinho adicionado com sucesso!");
-    
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this, "ID do Afilhado e ID do Padrinho devem ser números inteiros.", "Erro de Entrada", JOptionPane.ERROR_MESSAGE);
-            } catch (UnknownPersonException e) {
-                JOptionPane.showMessageDialog(this, "Não existe uma pessoa com o Fenix ID " + e.getFenixId(), "Erro: Pessoa Desconhecida", JOptionPane.ERROR_MESSAGE);
-            } // TODO, FAZER ERRO DE NAO PODER SER PADRINHO DE ELE MESMO, E APANHAR LÁ EM BAIXO TB
-        }
+        dialog.setVisible(true);  // Exibe o diálogo não modal
     }
 
     private void mostrarPessoa() {
@@ -318,7 +331,7 @@ public class AppGUI extends JFrame {
     
                 arvore.removerPadrinho(afilhadoId, padrinhoId);
     
-                JOptionPane.showMessageDialog(this, "Padrinho removido com sucesso!");
+                JOptionPane.showMessageDialog(this, arvore.getPessoa(afilhadoId).nomeComAlcunha() + " já não é afilhado de " + arvore.getPessoa(padrinhoId).nomeComAlcunha());
     
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(this, "ID do Afilhado e ID do Padrinho devem ser números inteiros.", "Erro de Entrada", JOptionPane.ERROR_MESSAGE);
