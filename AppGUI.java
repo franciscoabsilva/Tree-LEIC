@@ -187,6 +187,17 @@ public class AppGUI extends JFrame {
                             JOptionPane.showMessageDialog(dialog, "Uma pessoa não pode ser padrinho de si mesma!", "Erro", JOptionPane.ERROR_MESSAGE);
                             return;
                         }
+
+                        if (padrinhoId > afilhadoId) {
+                            int confirmation = JOptionPane.showConfirmDialog(dialog, 
+                                "O ID do Padrinho é maior que o ID do Afilhado. Tem certeza que deseja continuar?", 
+                                "Confirmação", 
+                                JOptionPane.YES_NO_OPTION, 
+                                JOptionPane.WARNING_MESSAGE);
+                            if (confirmation != JOptionPane.YES_OPTION) {
+                                return;
+                            }
+                        }
     
                         arvore.adicionarPadrinho(afilhadoId, padrinhoId);
                         JOptionPane.showMessageDialog(dialog, arvore.getPessoa(afilhadoId).nomeComAlcunha() + " é afilhado/a de " + arvore.getPessoa(padrinhoId).nomeComAlcunha());
