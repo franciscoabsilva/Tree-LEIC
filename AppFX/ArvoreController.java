@@ -32,6 +32,15 @@ import javafx.scene.control.ScrollPane;
 import javafx.stage.Modality;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.Region;
+import javafx.application.Platform;
+import javafx.geometry.Bounds;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
+import javafx.geometry.Point2D;
+
+import java.util.List;
+import java.util.ArrayList;
 
 public class ArvoreController implements Initializable {
 
@@ -880,22 +889,22 @@ public class ArvoreController implements Initializable {
     private VBox buildTreeVisualization(Pessoa pessoa, String mode, Set<Pessoa> visited) {
         VBox rootBox = new VBox(5); // Espaçamento vertical entre nós
         rootBox.setAlignment(Pos.TOP_CENTER);
-        
+
         // 1. Cria o botão para a pessoa atual
         VBox personNode = createPersonNode(pessoa);
         rootBox.getChildren().add(personNode);
 
-        // Se a pessoa já foi visitada neste caminho (para detetar ciclos)
+        // Evita ciclos (ex: A → B → A)
         if (visited.contains(pessoa)) {
-             personNode.getChildren().add(new Label("... Ciclo Detectado ..."));
-             return rootBox;
+            personNode.getChildren().add(new Label("... Ciclo Detectado ..."));
+            return rootBox;
         }
 
-        // Adiciona ao set de visitados para o próximo nível
+        // Marca a pessoa como visitada
         visited.add(pessoa);
 
+        // Determina próximos nós (Padrinhos ou Afilhados)
         Collection<Pessoa> proximos;
-        
         if ("Padrinhos".equals(mode)) {
             proximos = pessoa.getPadrinhos().values();
         } else if ("Afilhados".equals(mode)) {
@@ -904,27 +913,87 @@ public class ArvoreController implements Initializable {
             proximos = Collections.emptyList();
         }
 
-        // 2. Desenha os elementos próximos (Padrinhos ou Afilhados)
+        // 2. Se existirem próximos, cria as subárvores
         if (!proximos.isEmpty()) {
             HBox childrenBox = new HBox(30); // Espaçamento horizontal entre sub-árvores
             childrenBox.setAlignment(Pos.CENTER);
-            
-            // Simulação de linha de conexão (apenas espaçamento visual simples)
-            rootBox.getChildren().add(new Label("|")); 
 
+            // Pane usado para desenhar as linhas de ligação
+            Pane connectionPane = new Pane();
+            connectionPane.setPrefHeight(50);
+            connectionPane.setMinHeight(50);
+
+            // Cria e adiciona subárvores recursivamente
             for (Pessoa proximo : proximos) {
-                // Chamada recursiva para cada padrinho/afilhado
-                // Passamos uma cópia do set de visitados para que cada ramo seja independente na deteção de ciclos
                 VBox subTree = buildTreeVisualization(proximo, mode, new HashSet<>(visited));
                 childrenBox.getChildren().add(subTree);
             }
-            
-            rootBox.getChildren().add(childrenBox);
+
+            // Adiciona o painel das linhas e os filhos
+            rootBox.getChildren().addAll(connectionPane, childrenBox);
+
+            // Desenha as linhas depois que o layout estiver pronto
+            javafx.application.Platform.runLater(() -> {
+                // Coordenadas do nó do pai
+                double parentX = personNode.localToScene(personNode.getBoundsInLocal()).getMinX()
+                                + personNode.getBoundsInLocal().getWidth() / 2;
+                double parentY = personNode.localToScene(personNode.getBoundsInLocal()).getMaxY();
+
+                // Calcula coordenadas dos filhos
+                List<Point2D> filhosCoords = new ArrayList<>();
+                for (javafx.scene.Node subTree : childrenBox.getChildren()) {
+                    javafx.geometry.Bounds childBounds = subTree.localToScene(subTree.getBoundsInLocal());
+                    double childX = childBounds.getMinX() + childBounds.getWidth() / 2;
+                    double childY = childBounds.getMinY();
+                    filhosCoords.add(new Point2D(childX, childY));
+                }
+
+                if (filhosCoords.isEmpty()) return;
+
+                // Converte coordenadas para o sistema local do Pane
+                Point2D startInPane = connectionPane.sceneToLocal(parentX, parentY);
+                double midY = startInPane.getY() + 20; // altura da linha horizontal
+
+                // Linha vertical do pai até a barra horizontal
+                javafx.scene.shape.Line verticalDown = new javafx.scene.shape.Line(
+                    startInPane.getX(), startInPane.getY(),
+                    startInPane.getX(), midY
+                );
+                verticalDown.setStrokeWidth(2);
+                verticalDown.setStroke(javafx.scene.paint.Color.GRAY);
+                connectionPane.getChildren().add(verticalDown);
+
+                // Calcula o início e o fim da barra horizontal
+                double minX = Double.MAX_VALUE, maxX = Double.MIN_VALUE;
+                for (Point2D p : filhosCoords) {
+                    Point2D local = connectionPane.sceneToLocal(p);
+                    minX = Math.min(minX, local.getX());
+                    maxX = Math.max(maxX, local.getX());
+                }
+
+                // Linha horizontal que liga todos os filhos
+                javafx.scene.shape.Line horizontal = new javafx.scene.shape.Line(minX, midY, maxX, midY);
+                horizontal.setStrokeWidth(2);
+                horizontal.setStroke(javafx.scene.paint.Color.GRAY);
+                connectionPane.getChildren().add(horizontal);
+
+                // Linhas verticais de cada filho até a barra horizontal
+                for (Point2D child : filhosCoords) {
+                    Point2D endInPane = connectionPane.sceneToLocal(child);
+                    javafx.scene.shape.Line down = new javafx.scene.shape.Line(
+                        endInPane.getX(), midY,
+                        endInPane.getX(), endInPane.getY()
+                    );
+                    down.setStrokeWidth(2);
+                    down.setStroke(javafx.scene.paint.Color.GRAY);
+                    connectionPane.getChildren().add(down);
+                }
+            });
         }
-        
+
         return rootBox;
     }
-    
+
     // Método para criar os botões de navegação
     private HBox createArvoreButtons(Pessoa pessoaRaiz) {
         HBox panelBotoes = new HBox(20);
