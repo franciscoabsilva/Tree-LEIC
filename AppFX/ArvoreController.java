@@ -5,7 +5,7 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.Stack;
-
+import java.util.stream.Collectors;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -38,6 +38,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.geometry.Point2D;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -433,61 +435,75 @@ public class ArvoreController implements Initializable {
         Stage stage = new Stage();
         stage.setTitle("Lista de Todas as Pessoas (Informação Completa)");
         stage.setScene(new Scene(root, 700, 500));
-        stage.initModality(Modality.APPLICATION_MODAL); // Bloqueia a janela principal
+        stage.initModality(Modality.NONE);
         stage.show();
     }
 
-    // 7. Mostrar Lista de Pessoas (ID + Nome/Alcunha)
     @FXML
     private void mostrarListaPessoasNumeros() {
+        // TextArea para mostrar a lista
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
         textArea.setStyle("-fx-font-family: monospace; -fx-font-size: 14pt;"); // Estilo para melhor leitura
 
-        // Construir o texto da lista
-        StringBuilder sb = new StringBuilder();
-
-        // Obtém todas as pessoas na árvore e exibe o ID e nome com alcunha
-        for (int pessoaId : arvore.getPessoas().keySet()) { 
+        // Construir a lista completa de pessoas (original)
+        List<String> listaPessoas = new ArrayList<>();
+        for (int pessoaId : arvore.getPessoas().keySet()) {
             Pessoa pessoa = arvore.getPessoa(pessoaId);
-            
-            // Formato: ID Fenix: Nome (Alcunha)
-            String pessoaInfo = String.format("%-2d: %s", pessoa.getFenixId(), pessoa.nomeComAlcunha());
-            sb.append(pessoaInfo).append("\n");
+            listaPessoas.add(String.format("%-2d: %s", pessoa.getFenixId(), pessoa.nomeComAlcunha()));
         }
-    
-        if (sb.length() == 0) {
-            sb.append("A Árvore de Pessoas está vazia.");
-        }
-        textArea.setText(sb.toString());
 
-        // Criar o ScrollPane para envolver o TextArea
-        ScrollPane scrollPane = new ScrollPane(textArea);
-        scrollPane.setFitToWidth(true); 
-        scrollPane.setFitToHeight(true);
-    
-        // Botão para fechar a janela
-        Button btnVoltar = new Button("Voltar ao Menu Principal");
-        btnVoltar.setOnAction(e -> {
-            ((Stage)btnVoltar.getScene().getWindow()).close();
+        if (listaPessoas.isEmpty()) {
+            listaPessoas.add("A Árvore de Pessoas está vazia.");
+        }
+
+        // Mostrar inicialmente todas as pessoas
+        textArea.setText(String.join("\n", listaPessoas));
+
+        // Barra de pesquisa
+        TextField searchField = new TextField();
+        searchField.setPromptText("Pesquisar...");
+
+        // Listener para filtrar a lista à medida que o utilizador escreve
+        searchField.textProperty().addListener((obs, oldText, newText) -> {
+            String filtro = newText.toLowerCase();
+            List<String> filtradas = listaPessoas.stream()
+                    .filter(s -> s.toLowerCase().contains(filtro))
+                    .collect(Collectors.toList());
+            textArea.setText(String.join("\n", filtradas));
         });
-    
+
+        // ScrollPane para o TextArea
+        ScrollPane scrollPane = new ScrollPane(textArea);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+
+        // Botão de fechar
+        Button btnVoltar = new Button("Voltar ao Menu Principal");
+        btnVoltar.setOnAction(e -> ((Stage) btnVoltar.getScene().getWindow()).close());
+
         // Layout principal
-        BorderPane root = new BorderPane();
-        root.setCenter(scrollPane);
+        VBox topContainer = new VBox(searchField);
+        topContainer.setPadding(new Insets(10));
+        topContainer.setSpacing(5);
+
         VBox bottomContainer = new VBox(btnVoltar);
         bottomContainer.setPadding(new Insets(10));
         bottomContainer.setSpacing(10);
-        root.setBottom(bottomContainer);
-        BorderPane.setMargin(bottomContainer, new Insets(0, 0, 10, 0));
 
-        // Exibir as informações em uma nova janela
+        BorderPane root = new BorderPane();
+        root.setTop(topContainer);
+        root.setCenter(scrollPane);
+        root.setBottom(bottomContainer);
+
+        // Criar e mostrar a janela
         Stage stage = new Stage();
         stage.setTitle("Lista de Pessoas (IDs e Nomes)");
         stage.setScene(new Scene(root, 700, 500));
-        stage.initModality(Modality.APPLICATION_MODAL); // Bloqueia a janela principal
+        stage.initModality(Modality.NONE); // Permite clicar na janela principal
         stage.show();
     }
+
 
      // =========================================================================
     // 8. GESTÃO DE PESSOA E SUB-MÉTODOS (Implementação JavaFX com Troca de Scene)
