@@ -167,75 +167,73 @@ public class ArvoreController implements Initializable {
     // 2. Adicionar Padrinho
     @FXML
     private void adicionarPadrinho() {
-        Alert dialog = new Alert(AlertType.CONFIRMATION);
-        dialog.setTitle("Adicionar Padrinho");
-        dialog.setHeaderText("Introduza os IDs do afilhado e do padrinho:");
-
+        Stage stage = new Stage();
+        stage.setTitle("Adicionar Padrinho");
+        
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
-        // Nota: O Insets não está importado. Remova se não tiver a importação.
-        // grid.setPadding(new Insets(20, 150, 10, 10)); 
+        grid.setPadding(new Insets(10));
 
         TextField afilhadoIdField = new TextField();
         TextField padrinhoIdField = new TextField();
 
-        // Use a classe Label completa (javafx.scene.control.Label)
-        grid.addRow(0, new javafx.scene.control.Label("ID do Afilhado:"), afilhadoIdField);
-        grid.addRow(1, new javafx.scene.control.Label("ID do Padrinho:"), padrinhoIdField);
+        grid.addRow(0, new Label("ID do Afilhado:"), afilhadoIdField);
+        grid.addRow(1, new Label("ID do Padrinho:"), padrinhoIdField);
 
-        dialog.getDialogPane().setContent(grid);
+        Button btnOk = new Button("OK");
+        Button btnCancelar = new Button("Cancelar");
+        HBox buttons = new HBox(10, btnOk, btnCancelar);
+        buttons.setAlignment(Pos.CENTER);
+        grid.add(buttons, 0, 2, 2, 1);
 
-        Optional<ButtonType> result = dialog.showAndWait();
+        btnCancelar.setOnAction(e -> stage.close());
 
-        if (result.isPresent() && result.get() == ButtonType.OK) {
+        btnOk.setOnAction(e -> {
             try {
-                String afilhadoIdStr = afilhadoIdField.getText();
-                String padrinhoIdStr = padrinhoIdField.getText();
-                
-                if (afilhadoIdStr.isEmpty() || padrinhoIdStr.isEmpty()) {
-                    showAlert(AlertType.ERROR, "Erro", "Ambos os IDs do Fenix são obrigatórios!");
-                    return;
-                }
+                int afilhadoId = Integer.parseInt(afilhadoIdField.getText());
+                int padrinhoId = Integer.parseInt(padrinhoIdField.getText());
 
-                int afilhadoId = Integer.parseInt(afilhadoIdStr);
-                int padrinhoId = Integer.parseInt(padrinhoIdStr);
-
-                // 1. Não pode ser padrinho de si mesmo
                 if (afilhadoId == padrinhoId) {
                     showAlert(AlertType.ERROR, "Erro", "Uma pessoa não pode ser padrinho de si mesma!");
                     return;
                 }
 
-                // 2. Confirmação se Padrinho ID > Afilhado ID
                 if (padrinhoId > afilhadoId) {
                     Optional<ButtonType> confirmResult = showAlertConfirm(
                         "Confirmação", 
                         "O ID do Padrinho é maior que o ID do Afilhado. Tem certeza que deseja continuar?"
                     );
-                    
                     if (confirmResult.isPresent() && confirmResult.get() != ButtonType.OK) {
-                        return; // Retorna se o utilizador não confirmar
+                        return;
                     }
                 }
 
-                arvore.adicionarPadrinho(padrinhoId, afilhadoId);
+                arvore.adicionarPadrinho(afilhadoId, padrinhoId);
 
-                // Confirmação de Sucesso com Nomes (melhor para o utilizador)
                 showAlert(AlertType.INFORMATION, "Sucesso", 
-                        arvore.getPessoa(afilhadoId).nomeComAlcunha() + " é afilhado/a de " + 
-                        arvore.getPessoa(padrinhoId).nomeComAlcunha());
-                
-                //  POSSO SALVAR NO FINAL DE CADA FUNCAO MAS EU PREFIRO QUANDO A APP É FECHADA
-                //manager.save();
+                    arvore.getPessoa(afilhadoId).nomeComAlcunha() + " é afilhado/a de " +
+                    arvore.getPessoa(padrinhoId).nomeComAlcunha());
 
-            } catch (NumberFormatException e) {
+                stage.close();
+
+            } catch (NumberFormatException ex) {
                 showAlert(AlertType.ERROR, "Erro de Entrada", "Os IDs do Fenix devem ser números inteiros.");
-            } catch (UnknownPersonException e) {
-                showAlert(AlertType.ERROR, "Erro: Pessoa Desconhecida", "Não foi encontrada a pessoa com o ID Fenix " + e.getFenixId() + ".");
+            } catch (UnknownPersonException ex) {
+                showAlert(AlertType.ERROR, "Erro: Pessoa Desconhecida", 
+                        "Não foi encontrada a pessoa com o ID Fenix " + ex.getFenixId() + ".");
             }
-        }
+        });
+
+        Scene scene = new Scene(grid, 400, 150);
+        stage.setScene(scene);
+
+        // Muito importante: janela NÃO modal
+        stage.initModality(Modality.NONE);
+
+        stage.show();
     }
+
 
     // 3. Mostrar Pessoa
     @FXML
