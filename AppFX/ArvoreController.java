@@ -109,6 +109,13 @@ public class ArvoreController implements Initializable {
         // Usamos 'OK_DONE' como o retorno se for confirmado
         return alert.showAndWait();
     }
+
+    private Optional<ButtonType> showAlertConfirmStage(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(message);
+        return alert.showAndWait(); // <--- isto bloqueia até o utilizador clicar
+    }
     
     // 1. Adicionar Pessoa
     @FXML
@@ -200,7 +207,7 @@ public class ArvoreController implements Initializable {
                 }
 
                 if (padrinhoId > afilhadoId) {
-                    Optional<ButtonType> confirmResult = showAlertConfirm(
+                    Optional<ButtonType> confirmResult = showAlertConfirmStage(
                         "Confirmação", 
                         "O ID do Padrinho é maior que o ID do Afilhado. Tem certeza que deseja continuar?"
                     );
