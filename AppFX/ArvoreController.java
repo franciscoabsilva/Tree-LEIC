@@ -44,6 +44,19 @@ import javafx.scene.input.KeyEvent;
 import java.util.List;
 import java.util.ArrayList;
 
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ListCell;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
+import javafx.scene.Node;
+
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.scene.control.TextFormatter;
+import javafx.util.converter.IntegerStringConverter;
+
 public class ArvoreController implements Initializable {
 
     private Manager manager;
@@ -52,6 +65,7 @@ public class ArvoreController implements Initializable {
     private Stage currentStage;
     private Pessoa pessoaSelecionada; 
     private String currentMode; 
+    private SimpleIntegerProperty maxDepth = new SimpleIntegerProperty(Integer.MAX_VALUE);
     private Stack<Pessoa> historico = new Stack<>(); 
 
     private Scene menuPrincipalScene; 
@@ -116,6 +130,108 @@ public class ArvoreController implements Initializable {
         alert.setHeaderText(message);
         return alert.showAndWait(); // <--- isto bloqueia até o utilizador clicar
     }
+
+    /**
+     * Abre um diálogo modal para selecionar uma pessoa da árvore.
+     * O diálogo inclui um campo de pesquisa que filtra a lista por ID, Nome ou Alcunha.
+     *
+     * @param title O título da janela de diálogo.
+     * @param header O texto do cabeçalho (prompt para o utilizador).
+     * @return um Optional<Pessoa> contendo a pessoa selecionada, ou Optional.empty() se for cancelado.
+     */
+    private Optional<Pessoa> selecionarPessoa(String title, String header) {
+        Dialog<Pessoa> dialog = new Dialog<>();
+        dialog.setTitle(title);
+        dialog.setHeaderText(header);
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.getDialogPane().setMinWidth(Region.USE_PREF_SIZE);
+
+        // --- Layout Interno do Diálogo ---
+        VBox vbox = new VBox(10);
+        vbox.setPadding(new Insets(10));
+        TextField searchField = new TextField();
+        searchField.setPromptText("Pesquisar por ID, Nome ou Alcunha...");
+        ListView<Pessoa> listView = new ListView<>();
+        
+        // --- Lógica de Filtragem ---
+        
+        // 1. Obter todas as pessoas e colocá-las numa ObservableList
+        ObservableList<Pessoa> allPeople = FXCollections.observableArrayList(arvore.getPessoas().values());
+
+        // 2. Embrulhar a lista num FilteredList (inicialmente mostra todos)
+        FilteredList<Pessoa> filteredData = new FilteredList<>(allPeople, p -> true);
+
+        // 3. Definir o predicado do filtro com base no texto de pesquisa
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredData.setPredicate(pessoa -> {
+                // Se o filtro estiver vazio, mostra tudo
+                if (newValue == null || newValue.isEmpty()) {
+                    return true;
+                }
+                
+                String lowerCaseFilter = newValue.toLowerCase();
+                
+                // Pesquisa no ID, Nome e Alcunha
+                if (String.valueOf(pessoa.getFenixId()).contains(lowerCaseFilter)) {
+                    return true; // Corresponde ao ID
+                } else if (pessoa.getNome().toLowerCase().contains(lowerCaseFilter)) {
+                    return true; // Corresponde ao Nome
+                } else if (pessoa.getAlcunha() != null && pessoa.getAlcunha().toLowerCase().contains(lowerCaseFilter)) {
+                    return true; // Corresponde à Alcunha
+                }
+                return false; // Não corresponde
+            });
+        });
+
+        // 4. Embrulhar o FilteredList num SortedList (opcional, mas bom)
+        SortedList<Pessoa> sortedData = new SortedList<>(filteredData);
+        // (Opcional) Ordenar por ID
+        sortedData.setComparator((p1, p2) -> Integer.compare(p1.getFenixId(), p2.getFenixId()));
+
+
+        // 5. Colocar os dados filtrados e ordenados na ListView
+        listView.setItems(sortedData);
+
+        // --- Customizar a exibição dos itens na lista ---
+        listView.setCellFactory(lv -> new ListCell<Pessoa>() {
+            @Override
+            protected void updateItem(Pessoa item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    // Formato: 12345: Nome (Alcunha)
+                    setText(item.getFenixId() + ": " + item.nomeComAlcunha());
+                }
+            }
+        });
+
+        vbox.getChildren().addAll(searchField, listView);
+        dialog.getDialogPane().setContent(vbox);
+
+        // --- Botões OK e Cancelar ---
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Desativar o botão OK até que uma pessoa seja selecionada
+        Node okButton = dialog.getDialogPane().lookupButton(ButtonType.OK);
+        okButton.setDisable(true);
+        
+        listView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            okButton.setDisable(newSelection == null);
+        });
+
+        // --- Resultado ---
+        // Converte o resultado do diálogo para o objeto Pessoa selecionado
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                return listView.getSelectionModel().getSelectedItem();
+            }
+            return null;
+        });
+
+        // Mostrar o diálogo e esperar pela resposta
+        return dialog.showAndWait();
+    }
     
     // 1. Adicionar Pessoa
     @FXML
@@ -171,74 +287,69 @@ public class ArvoreController implements Initializable {
         }
     }
 
-    // 2. Adicionar Padrinho
+// 2. Adicionar Padrinho (Versão com seleção)
     @FXML
     private void adicionarPadrinho() {
-        Stage stage = new Stage();
-        stage.setTitle("Adicionar Padrinho");
         
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(10));
+        // 1. Selecionar o Afilhado
+        Optional<Pessoa> afilhadoOpt = selecionarPessoa(
+            "Adicionar Padrinho (Passo 1/2)", 
+            "Selecione o AFILHADO"
+        );
 
-        TextField afilhadoIdField = new TextField();
-        TextField padrinhoIdField = new TextField();
+        // Se o utilizador cancelar o primeiro passo, sai do método
+        if (!afilhadoOpt.isPresent()) {
+            return; 
+        }
+        Pessoa afilhado = afilhadoOpt.get();
 
-        grid.addRow(0, new Label("ID do Afilhado:"), afilhadoIdField);
-        grid.addRow(1, new Label("ID do Padrinho:"), padrinhoIdField);
+        // 2. Selecionar o Padrinho
+        Optional<Pessoa> padrinhoOpt = selecionarPessoa(
+            "Adicionar Padrinho (Passo 2/2)", 
+            "Agora, selecione o PADRINHO para " + afilhado.nomeComAlcunha()
+        );
 
-        Button btnOk = new Button("OK");
-        Button btnCancelar = new Button("Cancelar");
-        HBox buttons = new HBox(10, btnOk, btnCancelar);
-        buttons.setAlignment(Pos.CENTER);
-        grid.add(buttons, 0, 2, 2, 1);
+        // Se o utilizador cancelar o segundo passo, sai do método
+        if (!padrinhoOpt.isPresent()) {
+            return;
+        }
+        Pessoa padrinho = padrinhoOpt.get();
 
-        btnCancelar.setOnAction(e -> stage.close());
+        // 3. Executar a lógica (já não precisamos de NumberFormatException)
+        try {
+            int afilhadoId = afilhado.getFenixId();
+            int padrinhoId = padrinho.getFenixId();
 
-        btnOk.setOnAction(e -> {
-            try {
-                int afilhadoId = Integer.parseInt(afilhadoIdField.getText());
-                int padrinhoId = Integer.parseInt(padrinhoIdField.getText());
+            if (afilhadoId == padrinhoId) {
+                showAlert(AlertType.ERROR, "Erro", "Uma pessoa não pode ser padrinho de si mesma!");
+                return;
+            }
 
-                if (afilhadoId == padrinhoId) {
-                    showAlert(AlertType.ERROR, "Erro", "Uma pessoa não pode ser padrinho de si mesma!");
+            if (padrinhoId > afilhadoId) {
+                // Reutiliza a tua função de confirmação
+                Optional<ButtonType> confirmResult = showAlertConfirmStage(
+                    "Confirmação", 
+                    "O ID do Padrinho é maior que o ID do Afilhado. Tem certeza que deseja continuar?"
+                );
+                // NOTA: O teu código original verificava por ButtonType.OK.
+                // Vou manter a tua lógica: se não for OK, cancela.
+                if (confirmResult.isPresent() && confirmResult.get() != ButtonType.OK) {
                     return;
                 }
-
-                if (padrinhoId > afilhadoId) {
-                    Optional<ButtonType> confirmResult = showAlertConfirmStage(
-                        "Confirmação", 
-                        "O ID do Padrinho é maior que o ID do Afilhado. Tem certeza que deseja continuar?"
-                    );
-                    if (confirmResult.isPresent() && confirmResult.get() != ButtonType.OK) {
-                        return;
-                    }
-                }
-
-                arvore.adicionarPadrinho(afilhadoId, padrinhoId);
-
-                showAlert(AlertType.INFORMATION, "Sucesso", 
-                    arvore.getPessoa(afilhadoId).nomeComAlcunha() + " é afilhado/a de " +
-                    arvore.getPessoa(padrinhoId).nomeComAlcunha());
-
-                stage.close();
-
-            } catch (NumberFormatException ex) {
-                showAlert(AlertType.ERROR, "Erro de Entrada", "Os IDs do Fenix devem ser números inteiros.");
-            } catch (UnknownPersonException ex) {
-                showAlert(AlertType.ERROR, "Erro: Pessoa Desconhecida", 
-                        "Não foi encontrada a pessoa com o ID Fenix " + ex.getFenixId() + ".");
             }
-        });
 
-        Scene scene = new Scene(grid, 400, 150);
-        stage.setScene(scene);
+            arvore.adicionarPadrinho(afilhadoId, padrinhoId);
 
-        // Muito importante: janela NÃO modal
-        stage.initModality(Modality.NONE);
+            showAlert(AlertType.INFORMATION, "Sucesso", 
+                afilhado.nomeComAlcunha() + " é afilhado/a de " + padrinho.nomeComAlcunha());
 
-        stage.show();
+            // Já não precisamos de stage.close() porque os diálogos são modais e fecham-se sozinhos
+
+        } catch (UnknownPersonException ex) {
+            // Este catch é menos provável agora, mas é boa prática mantê-lo
+            showAlert(AlertType.ERROR, "Erro: Pessoa Desconhecida", 
+                    "Não foi encontrada a pessoa com o ID Fenix " + ex.getFenixId() + ".");
+        }
     }
 
 
@@ -786,33 +897,28 @@ public class ArvoreController implements Initializable {
 
     @FXML 
     private void mostrarArvoreGenealogica() {
-        // 1. INPUT DIALOG para obter o ID da Pessoa Raiz
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Mostrar Árvore Genealógica");
-        dialog.setHeaderText("Seleção de Pessoa");
-        dialog.setContentText("Digite o ID da pessoa para iniciar a árvore:");
         
-        Optional<String> result = dialog.showAndWait();
+        // 1. Chamar o seletor de pessoa em vez do TextInputDialog
+        Optional<Pessoa> pessoaOpt = selecionarPessoa(
+            "Mostrar Árvore Genealógica", 
+            "Selecione a pessoa para iniciar a árvore:"
+        );
 
-        if (result.isPresent() && !result.get().isEmpty()) {
-            try {
-                int fenixId = Integer.parseInt(result.get());
-                Pessoa pessoaRaiz = arvore.getPessoaExistente(fenixId);
-                
-                // Limpa o histórico e define a pessoa raiz
-                historico.clear();
-                historico.push(pessoaRaiz);
-                
-                // Mostrar o diálogo de seleção de modo (Padrinhos/Afilhados)
-                mostrarModoSelecao(pessoaRaiz);
-                
-            } catch (NumberFormatException e) {
-                showAlert(AlertType.ERROR, "Erro de Entrada", "Por favor, insira um ID válido (número inteiro).");
-            } catch (UnknownPersonException e) {
-                showAlert(AlertType.ERROR, "Erro", "Pessoa com o ID " + e.getFenixId() + " não encontrada.");
-            }
+        // 2. Verificar se uma pessoa foi selecionada (se o utilizador não clicou em "Cancelar")
+        if (pessoaOpt.isPresent()) {
+            
+            // Já não precisamos de try-catch, pois a pessoa é garantidamente válida
+            Pessoa pessoaRaiz = pessoaOpt.get();
+            
+            // Limpa o histórico e define a pessoa raiz
+            historico.clear();
+            historico.push(pessoaRaiz);
+            
+            // Mostrar o diálogo de seleção de modo (Padrinhos/Afilhados)
+            mostrarModoSelecao(pessoaRaiz);
         }
-    }
+        // Se pessoaOpt não estiver 'present', o utilizador cancelou e não fazemos nada.
+    }   
     
     // Mostra o diálogo para o utilizador escolher o modo (Padrinhos ou Afilhados)
     private void mostrarModoSelecao(Pessoa pessoaRaiz) {
@@ -860,7 +966,7 @@ public class ArvoreController implements Initializable {
         
         // 1. Desenha a Árvore (Centro)
         // A visualização é construída recursivamente usando VBox/HBox para estrutura hierárquica
-        VBox arvoreViz = buildTreeVisualization(pessoaRaiz, mode, new HashSet<Pessoa>());
+        VBox arvoreViz = buildTreeVisualization(pessoaRaiz, mode, new HashSet<Pessoa>(), 1);
         arvoreViz.setAlignment(Pos.TOP_CENTER);
         
         ScrollPane scrollPane = new ScrollPane(arvoreViz);
@@ -907,13 +1013,19 @@ public class ArvoreController implements Initializable {
     }
     
     // Método recursivo para construir a visualização da árvore
-    private VBox buildTreeVisualization(Pessoa pessoa, String mode, Set<Pessoa> visited) {
+    private VBox buildTreeVisualization(Pessoa pessoa, String mode, Set<Pessoa> visited, int currentLevel) {
         VBox rootBox = new VBox(5); // Espaçamento vertical entre nós
         rootBox.setAlignment(Pos.TOP_CENTER);
 
         // 1. Cria o botão para a pessoa atual
         VBox personNode = createPersonNode(pessoa);
         rootBox.getChildren().add(personNode);
+        
+        // --- NOVO: LÓGICA DE PROFUNDIDADE MÁXIMA ---
+        if (currentLevel >= maxDepth.get()) {
+            return rootBox; 
+        }
+        // ---------------------------------------------
 
         // Evita ciclos (ex: A → B → A)
         if (visited.contains(pessoa)) {
@@ -946,14 +1058,17 @@ public class ArvoreController implements Initializable {
 
             // Cria e adiciona subárvores recursivamente
             for (Pessoa proximo : proximos) {
-                VBox subTree = buildTreeVisualization(proximo, mode, new HashSet<>(visited));
+                // --- NOVO: AUMENTAR O NÍVEL NA CHAMADA RECURSIVA ---
+                VBox subTree = buildTreeVisualization(proximo, mode, new HashSet<>(visited), currentLevel + 1);
                 childrenBox.getChildren().add(subTree);
             }
+            // --------------------------------------------------------
 
             // Adiciona o painel das linhas e os filhos
             rootBox.getChildren().addAll(connectionPane, childrenBox);
 
             // Desenha as linhas depois que o layout estiver pronto
+            // O restante do código de desenho de linhas permanece o mesmo...
             javafx.application.Platform.runLater(() -> {
                 // Coordenadas do nó do pai
                 double parentX = personNode.localToScene(personNode.getBoundsInLocal()).getMinX()
@@ -1028,7 +1143,7 @@ public class ArvoreController implements Initializable {
         
         // Botão "Voltar" (Histórico)
         Button btnVoltar = new Button("Voltar (Pessoa Anterior)");
-        btnVoltar.setDisable(historico.size() <= 1); // Desativa se só houver 1 pessoa no histórico
+        btnVoltar.setDisable(historico.size() <= 1); 
         btnVoltar.setOnAction(e -> voltarArvore());
         
         // Botão "Trocar Modo"
@@ -1038,7 +1153,42 @@ public class ArvoreController implements Initializable {
             mostrarArvoreView(pessoaRaiz, currentMode);
         });
 
-        panelBotoes.getChildren().addAll(btnMenuPrincipal, btnVoltar, btnTrocarModo);
+        // --- NOVO: CAMPO DE TEXTO PARA PROFUNDIDADE ---
+        Label lblProfundidade = new Label("Profundidade Máx:");
+        
+        TextField txtProfundidade = new TextField();
+        txtProfundidade.setPrefColumnCount(3);
+
+        // 1. Força o campo de texto a aceitar apenas números (opcional, mas bom)
+        txtProfundidade.setTextFormatter(new TextFormatter<>(new IntegerStringConverter(), maxDepth.get(), change -> {
+            // Predicate: só aceita se for um número
+            if (change.getText().matches("\\d*")) {
+                return change;
+            }
+            return null;
+        }));
+        
+        // 2. Listener para atualizar a árvore automaticamente
+        txtProfundidade.textProperty().addListener((obs, oldVal, newVal) -> {
+            try {
+                int novaProfundidade = Integer.parseInt(newVal);
+                if (novaProfundidade > 0) {
+                    // Atualiza a propriedade
+                    maxDepth.set(novaProfundidade); 
+                    // Recarrega a vista imediatamente (pode ser pesado, mas é o que pediste)
+                    mostrarArvoreView(pessoaRaiz, currentMode); 
+                }
+            } catch (NumberFormatException e) {
+                // Ignora se o campo estiver vazio ou for inválido
+            }
+        });
+        
+        // Agrupar a Label e o TextField
+        HBox profundidadeBox = new HBox(5, lblProfundidade, txtProfundidade);
+        profundidadeBox.setAlignment(Pos.CENTER);
+        // ------------------------------------------
+
+        panelBotoes.getChildren().addAll(btnMenuPrincipal, btnVoltar, btnTrocarModo, profundidadeBox);
         
         return panelBotoes;
     }
