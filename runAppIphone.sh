@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =================================================================
-# SCRIPT DE EXECUÇÃO OTIMIZADO PARA ISH (Memória Limitada)
+# SCRIPT DE EXECUÇÃO OTIMIZADO PARA ISH (Modo Interpretado)
 # =================================================================
 
 # 1. Configuração
@@ -12,10 +12,13 @@ EXCEPTION_FILES="exceptions/DuplicatePersonException.java exceptions/UnknownPers
 FILES="GUI/App.java"
 OUT_DIR="classes"
 
-# --- CONFIGURAÇÃO DE MEMÓRIA ---
-# Define o máximo de RAM que o Java pode usar. 
-# Se o iSH fechar a app sozinho, tenta baixar para "64m" ou "32m".
-MEM_LIMIT="32m"
+# --- CONFIGURAÇÃO DE ESTABILIDADE ---
+# MEM_LIMIT: Limita a RAM para não matar o processo
+MEM_LIMIT="64m"
+
+# OPT_FLAGS: -Xint força o modo interpretado (desliga o JIT).
+# Isto evita o erro SIGSEGV no iSH.
+OPT_FLAGS="-Xint -Xmx$MEM_LIMIT"
 
 # 2. Limpeza
 # -----------------------------------------------------------------
@@ -25,10 +28,10 @@ mkdir -p "$OUT_DIR"
 
 # 3. Compilação
 # -----------------------------------------------------------------
-echo "A compilar..."
+echo "A compilar (Modo Seguro)..."
 
-# Adicionámos a flag -J-Xmx... para limitar a memória do COMPILADOR
-javac -J-Xmx$MEM_LIMIT -d "$OUT_DIR" \
+# Passamos -J-Xint para o compilador não crashar também
+javac -J-Xint -J-Xmx$MEM_LIMIT -d "$OUT_DIR" \
       -sourcepath . \
       $CORE_FILES $EXCEPTION_FILES $FILES
 
@@ -42,8 +45,8 @@ fi
 echo "A executar a App..."
 echo "------------------------------------------------"
 
-# Adicionámos a flag -Xmx... para limitar a memória da EXECUÇÃO
-java -Xmx$MEM_LIMIT -cp "$OUT_DIR" "$MAIN_CLASS"
+# Usamos as flags de otimização (Xint) e memória
+java $OPT_FLAGS -cp "$OUT_DIR" "$MAIN_CLASS"
 
 # -----------------------------------------------------------------
 echo ""
