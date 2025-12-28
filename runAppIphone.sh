@@ -1,27 +1,21 @@
 #!/bin/bash
 
 # =================================================================
-# SCRIPT DE EXECUÇÃO - VERSÃO IPHONE (Sem JavaFX)
+# SCRIPT DE EXECUÇÃO OTIMIZADO PARA ISH (Memória Limitada)
 # =================================================================
 
 # 1. Configuração
 # -----------------------------------------------------------------
-# Nome da classe principal (aquela que tem o public static void main)
-# IMPORTANTE: Confirma se o nome é exatamente este.
 MAIN_CLASS="App" 
-
-# Ficheiros Core (Lógica)
 CORE_FILES="core/ArvoreLEIC.java core/Pessoa.java core/Manager.java"
-
-# Ficheiros de Exceção
 EXCEPTION_FILES="exceptions/DuplicatePersonException.java exceptions/UnknownPersonException.java"
-
-# Ficheiros da App Iphone
-# IMPORTANTE: Ajusta o caminho se o teu ficheiro estiver noutra pasta (ex: AppIphone/AppIphone.java ou apenas AppIphone.java)
 FILES="GUI/App.java"
-
-# Pasta de saída dos ficheiros compilados (.class)
 OUT_DIR="classes"
+
+# --- CONFIGURAÇÃO DE MEMÓRIA ---
+# Define o máximo de RAM que o Java pode usar. 
+# Se o iSH fechar a app sozinho, tenta baixar para "64m" ou "32m".
+MEM_LIMIT="128m"
 
 # 2. Limpeza
 # -----------------------------------------------------------------
@@ -33,14 +27,11 @@ mkdir -p "$OUT_DIR"
 # -----------------------------------------------------------------
 echo "A compilar..."
 
-# O truque está aqui: passamos TODOS os ficheiros de uma vez.
-# O javac vai ler todos e, como não têm 'package', vai criar os .class
-# todos na raiz da pasta classes_iphone.
-javac -d "$OUT_DIR" \
+# Adicionámos a flag -J-Xmx... para limitar a memória do COMPILADOR
+javac -J-Xmx$MEM_LIMIT -d "$OUT_DIR" \
       -sourcepath . \
       $CORE_FILES $EXCEPTION_FILES $FILES
 
-# Verifica erros
 if [ $? -ne 0 ]; then
     echo "❌ ERRO: A compilação falhou."
     exit 1
@@ -48,11 +39,11 @@ fi
 
 # 4. Execução
 # -----------------------------------------------------------------
-echo "A executar a App Iphone..."
+echo "A executar a App..."
 echo "------------------------------------------------"
 
-# Executa apenas com o classpath apontado para a pasta de saída
-java -cp "$OUT_DIR" "$MAIN_CLASS"
+# Adicionámos a flag -Xmx... para limitar a memória da EXECUÇÃO
+java -Xmx$MEM_LIMIT -cp "$OUT_DIR" "$MAIN_CLASS"
 
 # -----------------------------------------------------------------
 echo ""
