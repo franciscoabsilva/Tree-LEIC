@@ -15,7 +15,7 @@ OUT_DIR="classes"
 # --- CONFIGURAÇÃO DE MEMÓRIA ---
 # Define o máximo de RAM que o Java pode usar. 
 # Se o iSH fechar a app sozinho, tenta baixar para "64m" ou "32m".
-MEM_LIMIT="128m"
+MEM_LIMIT="32m"
 
 # 2. Limpeza
 # -----------------------------------------------------------------
