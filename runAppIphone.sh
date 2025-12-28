@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =================================================================
-# SCRIPT DE EXECUÇÃO OTIMIZADO PARA ISH (Modo Interpretado)
+# SCRIPT INTELIGENTE - BUILD & RUN
 # =================================================================
 
 # 1. Configuração
@@ -12,42 +12,48 @@ EXCEPTION_FILES="exceptions/DuplicatePersonException.java exceptions/UnknownPers
 FILES="GUI/App.java"
 OUT_DIR="classes"
 
-# --- CONFIGURAÇÃO DE ESTABILIDADE ---
-# MEM_LIMIT: Limita a RAM para não matar o processo
-MEM_LIMIT="64m"
-
-# OPT_FLAGS: -Xint força o modo interpretado (desliga o JIT).
-# Isto evita o erro SIGSEGV no iSH.
+# Memória (Podes tentar 128m, se o iSH fechar volta a 64m)
+MEM_LIMIT="128m" 
 OPT_FLAGS="-Xint -Xmx$MEM_LIMIT"
 
-# 2. Limpeza
+# 2. Verifica se o utilizador pediu para compilar
 # -----------------------------------------------------------------
-echo "A limpar compilações anteriores..."
-rm -rf "$OUT_DIR"
-mkdir -p "$OUT_DIR"
+# Se escreveres "./runAppIphone.sh build", ele entra aqui.
+if [ "$1" == "build" ]; then
+    echo "🔨 A limpar e compilar (Modo Seguro)..."
+    rm -rf "$OUT_DIR"
+    mkdir -p "$OUT_DIR"
 
-# 3. Compilação
+    # Compilação lenta, mas necessária quando mudas código
+    javac -J-Xint -J-Xmx$MEM_LIMIT -d "$OUT_DIR" \
+          -sourcepath . \
+          $CORE_FILES $EXCEPTION_FILES $FILES
+
+    if [ $? -ne 0 ]; then
+        echo "❌ ERRO: A compilação falhou."
+        exit 1
+    fi
+    echo "✅ Compilação concluída."
+else
+    # Se não pedires build, ele salta a compilação.
+    echo "⏩ A saltar compilação (use './runAppIphone.sh build' para recompilar)."
+fi
+
+# 3. Verifica se as classes existem antes de correr
 # -----------------------------------------------------------------
-echo "A compilar (Modo Seguro)..."
-
-# Passamos -J-Xint para o compilador não crashar também
-javac -J-Xint -J-Xmx$MEM_LIMIT -d "$OUT_DIR" \
-      -sourcepath . \
-      $CORE_FILES $EXCEPTION_FILES $FILES
-
-if [ $? -ne 0 ]; then
-    echo "❌ ERRO: A compilação falhou."
+if [ ! -d "$OUT_DIR" ]; then
+    echo "⚠️  Não encontrei ficheiros compilados."
+    echo "Por favor corre a primeira vez com: ./runAppIphone.sh build"
     exit 1
 fi
 
 # 4. Execução
 # -----------------------------------------------------------------
-echo "A executar a App..."
+echo "🚀 A executar a App..."
 echo "------------------------------------------------"
 
-# Usamos as flags de otimização (Xint) e memória
 java $OPT_FLAGS -cp "$OUT_DIR" "$MAIN_CLASS"
 
 # -----------------------------------------------------------------
 echo ""
-echo "Fim da execução."
+echo "Fim."
