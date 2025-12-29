@@ -207,14 +207,14 @@ public class App {
                                     case 2:
                                         System.out.print("Digite o novo Nome: ");
                                         String novoNome = scanner.nextLine();
-                                        pessoa.setNome(novoNome);
+                                        arvore.alterarNome(pessoa.getFenixId(), novoNome);
                                         System.out.println("\nNome atualizado com sucesso.");
                                         break;
 
                                     case 3:
                                         System.out.print("Digite a nova Alcunha: ");
                                         String novaAlcunha = scanner.nextLine();
-                                        pessoa.setAlcunha(novaAlcunha);
+                                        arvore.alterarAlcunha(pessoa.getFenixId(), novaAlcunha);
                                         System.out.println("\nAlcunha atualizada com sucesso.");
                                         break;
 
@@ -223,7 +223,7 @@ public class App {
                                         try{
                                             int novaMatricula = scanner.nextInt();
                                             scanner.nextLine();
-                                            pessoa.setMatriculas(novaMatricula);
+                                            arvore.alterarMatricula(pessoa.getFenixId(), novaMatricula);
                                             System.out.println("\nMatrícula atualizada com sucesso.");
                                             break;
                                         } catch (InputMismatchException e) {

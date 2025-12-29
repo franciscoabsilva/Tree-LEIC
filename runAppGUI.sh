@@ -20,7 +20,6 @@ EXCEPTION_FILES="exceptions/DuplicatePersonException.java exceptions/UnknownPers
 GUI_FILES="GUI/AppGUI.java" 
 MAIN_CLASS_GUI="AppGUI" 
 
-
 # Pasta de saída dos ficheiros compilados (.class)
 OUT_DIR="classes"
 

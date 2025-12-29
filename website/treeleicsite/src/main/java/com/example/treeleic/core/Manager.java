@@ -4,7 +4,7 @@ import java.io.*;
 
 public class Manager {
 
-    private String _filename = "arvoreLEIC.dat";
+    private String _filename = "../arvoreLEIC.dat"; // MUDAR AQUI A LOCALIZACAO DO ARVORELEIC.DAT, neste momento está na pasta website
     private ArvoreLEIC _arvore = new ArvoreLEIC();
 
     public void load() {

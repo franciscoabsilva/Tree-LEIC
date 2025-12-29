@@ -35,7 +35,7 @@ echo "-----------------------------------------------------"
 # 2. RODAR O SITE (GRADLE)
 # ==========================================
 echo "☕ A iniciar o servidor Gradle..."
-cd "$BASE_DIR/treeleicsite"
+cd "$BASE_DIR/website/treeleicsite"
 
 chmod +x gradlew
 ./gradlew bootRun

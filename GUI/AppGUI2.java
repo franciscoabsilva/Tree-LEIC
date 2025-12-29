@@ -506,20 +506,20 @@ public class AppGUI extends JFrame {
 
     private void alterarNome() {
         String novoNome = JOptionPane.showInputDialog(this, "Digite o novo nome");
-        pessoaSelecionada.setNome(novoNome);
+        arvore.alterarNome(pessoaSelecionada.getFenixId(), novoNome);
         JOptionPane.showMessageDialog(this, "Nome alterado com sucesso!");
     }
 
     private void alterarAlcunha() {
         String novaAlcunha = JOptionPane.showInputDialog(this, "Digite a nova alcunha");
-        pessoaSelecionada.setAlcunha(novaAlcunha);
+        arvore.alterarAlcunha(pessoaSelecionada.getFenixId(), novaAlcunha);
         JOptionPane.showMessageDialog(this, "Alcunha alterada com sucesso!");
     }
 
     private void alterarMatricula() {
         try {
             String novaMatricula = JOptionPane.showInputDialog(this, "Digite a nova matrícula");
-            pessoaSelecionada.setMatriculas(Integer.parseInt(novaMatricula));
+            arvore.alterarMatricula(pessoaSelecionada.getFenixId(), Integer.parseInt(novaMatricula));
             JOptionPane.showMessageDialog(this, "Matrícula alterada com sucesso!");
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Por favor, insira um número inteiro para a matrícula.");

@@ -746,7 +746,7 @@ public class ArvoreController implements Initializable {
 
         if (result.isPresent() && !result.get().isEmpty()) {
             String novoNome = result.get();
-            pessoaSelecionada.setNome(novoNome);
+            arvore.alterarNome(pessoaSelecionada.getFenixId(), novoNome);
             showAlert(AlertType.INFORMATION, "Sucesso", "Nome alterado com sucesso para " + novoNome + "!");
             mostrarMenuGestao(); // Recarrega o menu com o novo título
         }
@@ -762,7 +762,7 @@ public class ArvoreController implements Initializable {
 
         if (result.isPresent()) { // Alcunha pode ser vazia
             String novaAlcunha = result.get();
-            pessoaSelecionada.setAlcunha(novaAlcunha);
+            arvore.alterarAlcunha(pessoaSelecionada.getFenixId(), novaAlcunha);
             showAlert(AlertType.INFORMATION, "Sucesso", "Alcunha alterada com sucesso para " + (novaAlcunha.isEmpty() ? "(vazio)" : novaAlcunha) + "!");
             mostrarMenuGestao(); // Recarrega o menu com o novo título
         }
@@ -779,7 +779,7 @@ public class ArvoreController implements Initializable {
         if (result.isPresent() && !result.get().isEmpty()) {
             try {
                 int novaMatricula = Integer.parseInt(result.get());
-                pessoaSelecionada.setMatriculas(novaMatricula);
+                arvore.alterarMatricula(pessoaSelecionada.getFenixId(), novaMatricula);
                 showAlert(AlertType.INFORMATION, "Sucesso", "Matrícula alterada com sucesso para " + novaMatricula + "!");
                 mostrarMenuGestao(); // Recarrega o menu com o novo título
             } catch (NumberFormatException e) {
