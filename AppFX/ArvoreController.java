@@ -60,7 +60,7 @@ import javafx.util.converter.IntegerStringConverter;
 public class ArvoreController implements Initializable {
 
     private Manager manager;
-    private ArvoreLEIC arvore;
+    private Manager arvore;
 
     private Stage currentStage;
     private Pessoa pessoaSelecionada; 
@@ -96,7 +96,7 @@ public class ArvoreController implements Initializable {
         
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {manager.save();}));
         
-        arvore = manager.getArvore();
+        arvore = manager;
     }
 
     private void showAlert(AlertType type, String title, String content) {

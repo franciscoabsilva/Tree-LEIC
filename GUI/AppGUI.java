@@ -12,7 +12,7 @@ public class AppGUI extends JFrame {
 
     private Manager manager;
 
-    private ArvoreLEIC arvore;
+    private Manager arvore;
 
     private JFrame frame;
 
@@ -38,7 +38,7 @@ public class AppGUI extends JFrame {
         manager = new Manager();
         manager.load();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {manager.save();}));
-        arvore = manager.getArvore();
+        arvore = manager;
 
         panelPrincipal = new JPanel();
         panelPrincipal.setLayout(new GridLayout(11, 1, 10, 10)); //11 linhas, 1 coluna

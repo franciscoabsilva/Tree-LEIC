@@ -9,7 +9,7 @@ public class App {
         Manager manager = new Manager();
         manager.load();
 
-        ArvoreLEIC arvore = manager.getArvore();
+        Manager arvore = manager;
         
         Scanner scanner = new Scanner(System.in);
 
@@ -347,7 +347,7 @@ public class App {
                         }
 
                     case 0:
-                        System.out.println("Saindo e salvando...");
+                        System.out.println("Saindo...");
                         scanner.close();
                         System.exit(0);
                         break;
