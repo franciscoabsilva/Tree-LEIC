@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Árvore LEIC</title>
+
+    <link rel="icon" type="image/png" href="icon.png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+
+    <style>
+        /* --- GERAL --- */
+        body { 
+            margin: 0; padding: 0; 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #1a1a1a; 
+            color: white; 
+            /* Começa com scroll ativado para ver a lista */
+            overflow-y: auto; 
+            overflow-x: hidden;
+        }
+
+        /* Classe utilitária para travar o scroll quando o grafo abre */
+        body.graph-mode { overflow: hidden; }
+
+        /* --- ECRÃ DE ENTRADA (WRAPPER) --- */
+        #intro-screen {
+            position: relative;
+            background: #1a1a1a;
+            width: 100%;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+
+        /* Secção 1: Busca (Ocupa 100vh) */
+        .hero-section {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #2d2d2d 0%, #1a1a1a 100%);
+            position: relative;
+        }
+
+        .card {
+            background: #2d2d2d; padding: 40px; border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center; width: 350px;
+            z-index: 2;
+        }
+        h2 { margin: 0 0 20px 0; color: #61bffc; font-size: 28px; }
+
+        /* Seta a indicar scroll */
+        .scroll-indicator {
+            position: absolute; bottom: 30px;
+            animation: bounce 2s infinite; opacity: 0.7; font-size: 24px; color: #888;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-10px);}
+            60% {transform: translateY(-5px);}
+        }
+
+        /* Secção 2: Lista Completa (Aparece com scroll) */
+        #directory-section {
+            padding: 50px 20px;
+            background-color: #111;
+            min-height: 50vh;
+        }
+        .directory-header {
+            text-align: center; margin-bottom: 40px; color: #61bffc;
+        }
+        
+        .directory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .person-card {
+            background: #222; border: 1px solid #333;
+            padding: 15px; border-radius: 8px; cursor: pointer;
+            transition: all 0.2s; display: flex; flex-direction: column; gap: 5px;
+        }
+        .person-card:hover {
+            background: #333; border-color: #61bffc; transform: translateY(-3px);
+        }
+        .pc-name { font-weight: bold; color: #eee; font-size: 15px; }
+        .pc-id { font-size: 12px; color: #888; }
+
+
+        /* --- AUTOCOMPLETE CSS --- */
+        .autocomplete-wrapper { position: relative; width: 100%; margin: 10px 0 20px 0; }
+        input {
+            width: 100%; padding: 12px; border-radius: 8px;
+            border: 2px solid #444; background: #333; color: white;
+            font-size: 18px; text-align: center; box-sizing: border-box;
+        }
+        input:focus { border-color: #61bffc; outline: none; }
+        .suggestions-box {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: #333; border: 1px solid #444; border-top: none;
+            border-radius: 0 0 8px 8px; max-height: 150px; overflow-y: auto;
+            z-index: 1000; display: none; text-align: left;
+        }
+        .suggestion-item {
+            padding: 10px; cursor: pointer; border-bottom: 1px solid #444;
+            font-size: 14px; color: #ddd; display: flex; justify-content: space-between;
+        }
+        .suggestion-item:hover { background-color: #444; color: #61bffc; }
+        
+        /* BOTÕES */
+        .btn-group { display: flex; gap: 15px; justify-content: center; }
+        button {
+            padding: 12px 24px; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s;
+        }
+        button:hover { transform: scale(1.05); filter: brightness(1.1); }
+        .btn-up { background-color: #FF9800; color: white; }
+        .btn-down { background-color: #4CAF50; color: white; }
+
+        /* CONTROLS (Graph Mode) */
+        .top-controls {
+            position: absolute; top: 20px; left: 20px; right: 20px; z-index: 50;
+            display: none; justify-content: space-between; pointer-events: none;
+        }
+        .top-controls button { pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-reset { background: #444; color: white; border: 1px solid #666; font-size: 14px; padding: 10px 20px; }
+        .btn-toggle { background: #2196F3; color: white; font-size: 14px; padding: 10px 20px; }
+
+        /* GRAFO */
+        #cy { width: 100vw; height: 100vh; display: block; position: fixed; top: 0; left: 0; z-index: 0; }
+        
+        /* INFO BOX */
+        #info-box {
+            position: absolute; bottom: 20px; right: 20px;
+            background: rgba(30, 30, 30, 0.95); padding: 20px; border-radius: 12px;
+            border: 1px solid #555; display: none; width: 300px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 60;
+        }
+        .action-btn { background-color: #9C27B0; width: 100%; color: white; margin-top: 5px; }
+        #loading-text { color: #888; margin-top: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div id="intro-screen">
+    <div class="hero-section">
+        <div class="card">
+            <h2>Árvore LEIC</h2>
+            <p>Número ou Nome:</p>
+            
+            <div class="autocomplete-wrapper">
+                <input type="text" id="studentId" placeholder="Ex: 99123 ou Ana..." autocomplete="off">
+                <div id="suggestions" class="suggestions-box"></div>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn-up" onclick="app.pesquisarInicial('up')">⬆ Padrinhos</button>
+                <button class="btn-down" onclick="app.pesquisarInicial('down')">⬇ Afilhados</button>
+            </div>
+            <div id="loading-text">A carregar grafo...</div>
+        </div>
+        <div class="scroll-indicator">⬇ Scroll para ver todos</div>
+    </div>
+
+    <div id="directory-section">
+        <div class="directory-header">
+            <h2>Diretório Completo</h2>
+            <p>Clique num cartão para ver a árvore dessa pessoa</p>
+        </div>
+        <div id="directory-grid" class="directory-grid">
+            </div>
+    </div>
+</div>
+
+<div class="top-controls" id="topControls">
+    <button class="btn-reset" onclick="location.reload()">⬅ Nova Pesquisa</button>
+    <button class="btn-toggle" id="btnToggleMode" onclick="app.alternarModo()">Mudar Modo</button>
+</div>
+
+<div id="cy"></div>
+
+<div id="info-box">
+    <div id="info-content" style="margin-bottom: 15px; font-size: 15px;"></div>
+    <button class="action-btn" id="btnFocusNode">📍 Centrar nesta pessoa</button>
+</div>
+
+<script>
+const app = {
+    data: null,
+    cy: null,
+    state: { centerId: null, direction: 'up' },
+    colors: {
+        0: '#ffffff', 1: '#FF9800', 2: '#FF5722', 3: '#F44336', 
+        '-1': '#4CAF50', '-2': '#009688', '-3': '#00BCD4'
+    },
+
+    init: function() {
+        // Simulação de fetch (substituir pelo teu endpoint real)
+        fetch('/api/grafo') 
+            .then(res => res.json())
+            .then(json => {
+                this.data = json;
+                const status = document.getElementById('loading-text');
+                
+                if(!json.nodes || json.nodes.length === 0) {
+                    status.innerText = "Erro: Base de dados vazia.";
+                    status.style.color = "red";
+                } else {
+                    status.innerText = `Dados carregados: ${json.nodes.length} pessoas.`;
+                    status.style.color = "#4CAF50";
+                    
+                    this.setupAutocomplete();
+                    this.renderListaCompleta(); // <--- GERA A LISTA AO SCROLL
+                }
+            })
+            .catch(e => console.error(e));
+    },
+
+    // --- NOVA FUNÇÃO PARA DETERMINAR A COR DINAMICAMENTE ---
+    getColorForLevel: function(level) {
+        if (level === 0) return '#ffffff'; // O próprio (Branco)
+
+        // Paletas de cores: do mais claro/próximo ao mais intenso/distante
+
+        // Ancestrais (Padrinhos, Avós...) -> VERMELHOS VIVOSS
+        const redPalette = [
+            '#FF8A65', // Lvl 1: Salmão vibrante
+            '#FF5722', // Lvl 2: Laranja avermelhado intenso
+            '#E64A19', // Lvl 3: Vermelho forte
+            '#D81B60', // Lvl 4: Rosa choque profundo
+            '#C2185B', // Lvl 5: Carmesim
+            '#880E4F'  // Lvl 6+: Bordô muito intenso
+        ];
+
+        // Descendentes (Afilhados, Netos...) -> AZUIS VIVOS
+        const bluePalette = [
+            '#4FC3F7', // Lvl -1: Azul celeste vibrante
+            '#03A9F4', // Lvl -2: Azul claro forte
+            '#0288D1', // Lvl -3: Azul cerúleo intenso
+            '#01579B', // Lvl -4: Azul marinho profundo
+            '#311B92',  // Lvl -5: Índigo profundo
+            '#1A237E'  // Lvl -6+: Azul noite muito intenso
+        ];
+
+        if (level > 0) {
+            // Usa o índice level-1. O Math.min garante que se o nível for muito alto, 
+            // usa a última cor da paleta em vez de dar erro.
+            const index = Math.min(level - 1, redPalette.length - 1);
+            return redPalette[index];
+        } else {
+            // Usa o valor absoluto do nível para os negativos
+            const absLevel = Math.abs(level);
+            const index = Math.min(absLevel - 1, bluePalette.length - 1);
+            return bluePalette[index];
+        }
+    },
+    // -------------------------------------------------------
+
+    // --- NOVA FUNÇÃO: RENDERIZAR LISTA NO SCROLL ---
+    renderListaCompleta: function() {
+        const grid = document.getElementById('directory-grid');
+        grid.innerHTML = '';
+
+        // Ordenar alfabeticamente
+        const sortedNodes = [...this.data.nodes].sort((a, b) => 
+            (a.label || '').localeCompare(b.label || '')
+        );
+
+        sortedNodes.forEach(node => {
+            const card = document.createElement('div');
+            card.className = 'person-card';
+            
+            // Limpeza básica do nome (se tiver aspas, mostra o que está nelas)
+            let displayName = node.label;
+            // Opcional: Mostra o nome completo na lista, mas podes usar lógica de nickname se quiseres
+
+            card.innerHTML = `
+                <div class="pc-name">${displayName}</div>
+                <div class="pc-id">#${node.id}</div>
+            `;
+
+            // Ao clicar no cartão da lista
+            card.onclick = () => {
+                // Preenche o input só para consistência
+                document.getElementById('studentId').value = node.id;
+                // Inicia o grafo
+                this.iniciarGrafoViaClick(node.id);
+            };
+
+            grid.appendChild(card);
+        });
+    },
+
+    setupAutocomplete: function() {
+        const input = document.getElementById('studentId');
+        const box = document.getElementById('suggestions');
+
+        input.addEventListener('input', () => {
+            const term = input.value.toLowerCase().trim();
+            box.innerHTML = '';
+            if (term.length < 1) { box.style.display = 'none'; return; }
+
+            const matches = this.data.nodes.filter(n => 
+                String(n.id).includes(term) || (n.label && n.label.toLowerCase().includes(term))
+            ).slice(0, 5);
+
+            if (matches.length > 0) {
+                matches.forEach(match => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `<span>${match.label}</span> <span class="suggestion-id">#${match.id}</span>`;
+                    div.onclick = () => {
+                        input.value = match.id;
+                        box.style.display = 'none';
+                        input.focus();
+                    };
+                    box.appendChild(div);
+                });
+                box.style.display = 'block';
+            } else { box.style.display = 'none'; }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target !== input && e.target !== box) box.style.display = 'none';
+        });
+        
+        input.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                if(box.style.display === 'block' && box.firstChild) {
+                    box.firstChild.click(); e.preventDefault();
+                } else { document.getElementById('studentId').blur(); }
+            }
+        });
+    },
+
+    // Função auxiliar para iniciar vindo da lista (default UP)
+    iniciarGrafoViaClick: function(id) {
+        document.getElementById('intro-screen').style.display = 'none';
+        document.getElementById('topControls').style.display = 'flex';
+        
+        // TRAVAR O SCROLL DO BODY
+        document.body.classList.add('graph-mode');
+
+        this.carregarGrafo(id, 'up');
+    },
+
+    pesquisarInicial: function(direction) {
+        if (!this.data) return alert("Aguarde o carregamento...");
+        const term = document.getElementById('studentId').value.trim().toLowerCase();
+        if (!term) return alert("Escreve um número ou nome!");
+
+        const targetNode = this.data.nodes.find(n => 
+            String(n.id) === term || (n.label && n.label.toLowerCase() === term)
+        );
+
+        if (!targetNode) return alert("Pessoa não encontrada.");
+
+        document.getElementById('intro-screen').style.display = 'none';
+        document.getElementById('topControls').style.display = 'flex';
+        
+        // TRAVAR O SCROLL DO BODY
+        document.body.classList.add('graph-mode');
+
+        this.carregarGrafo(targetNode.id, direction);
+    },
+
+    alternarModo: function() {
+        const novaDirecao = this.state.direction === 'up' ? 'down' : 'up';
+        this.carregarGrafo(this.state.centerId, novaDirecao);
+    },
+
+    carregarGrafo: function(centerId, direction) {
+        this.state.centerId = centerId;
+        this.state.direction = direction;
+
+        const btnToggle = document.getElementById('btnToggleMode');
+        if (direction === 'up') {
+            btnToggle.innerHTML = "⬇ Mudar para Afilhados";
+            btnToggle.style.backgroundColor = "#4CAF50"; 
+        } else {
+            btnToggle.innerHTML = "⬆ Mudar para Padrinhos";
+            btnToggle.style.backgroundColor = "#FF9800"; 
+        }
+
+        document.getElementById('info-box').style.display = 'none';
+        const elements = this.filtrarElementos(centerId, direction);
+        this.renderGraph(elements);
+    },
+
+    filtrarElementos: function(centerId, direction) {
+        const nodesSet = new Set([centerId]);
+        const edgesSet = [];
+        const levels = {}; levels[centerId] = 0;
+        const padrinhoDe = {}; const afilhadoDe = {}; 
+
+        this.data.edges.forEach(e => {
+            if(!padrinhoDe[e.from]) padrinhoDe[e.from] = [];
+            padrinhoDe[e.from].push(e.to);
+            if(!afilhadoDe[e.to]) afilhadoDe[e.to] = [];
+            afilhadoDe[e.to].push(e.from);
+        });
+
+        const queue = [{id: centerId, level: 0}];
+        const visited = new Set([centerId]);
+
+        while(queue.length > 0) {
+            const current = queue.shift();
+            
+            if (direction === 'up' && afilhadoDe[current.id]) {
+                afilhadoDe[current.id].forEach(padrinhoId => {
+                    edgesSet.push({ data: { source: padrinhoId, target: current.id } });
+                    if (!visited.has(padrinhoId)) {
+                        visited.add(padrinhoId);
+                        nodesSet.add(padrinhoId);
+                        levels[padrinhoId] = current.level + 1;
+                        queue.push({ id: padrinhoId, level: current.level + 1 });
+                    }
+                });
+            }
+
+            if (direction === 'down' && padrinhoDe[current.id]) {
+                padrinhoDe[current.id].forEach(afilhadoId => {
+                    edgesSet.push({ data: { source: current.id, target: afilhadoId } });
+                    if (!visited.has(afilhadoId)) {
+                        visited.add(afilhadoId);
+                        nodesSet.add(afilhadoId);
+                        levels[afilhadoId] = current.level - 1;
+                        queue.push({ id: afilhadoId, level: current.level - 1 });
+                    }
+                });
+            }
+        }
+
+        const cyNodes = Array.from(nodesSet).map(id => {
+            const raw = this.data.nodes.find(n => n.id === id);
+            const lvl = levels[id];
+            const color = this.getColorForLevel(lvl); 
+            
+            let textoBola = raw.label || String(id);
+            if (textoBola.includes('"')) {
+                const match = textoBola.match(/"(.*?)"/);
+                if (match) textoBola = `"${match[1]}"`;
+            } else {
+                textoBola = textoBola.split(' ')[0]; 
+            }
+
+            return {
+                data: {
+                    id: String(id),
+                    label: textoBola,
+                    level: lvl,
+                    info: raw.title
+                },
+                style: {
+                    'background-color': color,
+                    'border-width': id === centerId ? 6 : 0,
+                    'border-color': '#fff'
+                }
+            };
+        });
+        return [...cyNodes, ...edgesSet];
+    },
+
+    renderGraph: function(elements) {
+        if(this.cy) this.cy.destroy(); // Limpar anterior para evitar bugs
+
+        this.cy = cytoscape({
+            container: document.getElementById('cy'),
+            elements: elements,
+            wheelSensitivity: 0.2,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'label': 'data(label)',
+                        'color': '#fff',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'text-outline-width': 2,
+                        'text-outline-color': '#000',
+                        'width': 65, 'height': 65,
+                        'font-size': '16px', 'font-weight': 'bold'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 4, 'line-color': '#666',
+                        'target-arrow-color': '#666', 'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier', 'arrow-scale': 1.5
+                    }
+                }
+            ],
+            layout: {
+                name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 120, padding: 50,
+                animate: true, animationDuration: 800
+            }
+        });
+
+        this.cy.on('tap', 'node', (evt) => {
+            const node = evt.target;
+            const data = node.data();
+            const clickedId = parseInt(data.id);
+            const infoBox = document.getElementById('info-box');
+            document.getElementById('info-content').innerHTML = data.info;
+            const btnFocus = document.getElementById('btnFocusNode');
+            btnFocus.onclick = () => { this.carregarGrafo(clickedId, this.state.direction); };
+            infoBox.style.display = 'block';
+        });
+
+        this.cy.on('tap', (evt) => {
+            if(evt.target === this.cy) document.getElementById('info-box').style.display = 'none';
+        });
+    }
+};
+
+app.init();
+</script>
+
+</body>
+</html>
