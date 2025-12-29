@@ -2,6 +2,7 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Árvore LEIC</title>
 
     <link rel="icon" type="image/png" href="icon.png">
@@ -200,6 +201,20 @@ const app = {
         '-1': '#4CAF50', '-2': '#009688', '-3': '#00BCD4'
     },
 
+    resetZoom: function() {
+        const viewport = document.querySelector("meta[name=viewport]");
+        if (viewport) {
+            // Guarda o valor original
+            const original = viewport.getAttribute("content");
+            // Força escala fixa
+            viewport.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1");
+            // Devolve ao normal depois de um instante (para permitir zoom manual depois se quiseres)
+            setTimeout(() => {
+                viewport.setAttribute("content", "width=device-width, initial-scale=1");
+            }, 100);
+        }
+    },
+
     init: function() {
         // Simulação de fetch (substituir pelo teu endpoint real)
         fetch('/api/grafo') 
@@ -289,6 +304,8 @@ const app = {
             card.onclick = () => {
                 // Preenche o input só para consistência
                 document.getElementById('studentId').value = node.id;
+                // Envia log
+                this.enviarLog("Clicou_em_Diretorio: " + node.label + " (" + node.id + ")");
                 // Inicia o grafo
                 this.iniciarGrafoViaClick(node.id);
             };
@@ -350,6 +367,12 @@ const app = {
         this.carregarGrafo(id, 'up');
     },
 
+    enviarLog: function(mensagem) {
+        // Envia um pedido silencioso ao servidor
+        fetch('/api/log?msg=' + encodeURIComponent(mensagem))
+            .catch(err => console.error(err)); 
+    },
+
     pesquisarInicial: function(direction) {
         if (!this.data) return alert("Aguarde o carregamento...");
         const term = document.getElementById('studentId').value.trim().toLowerCase();
@@ -360,6 +383,10 @@ const app = {
         );
 
         if (!targetNode) return alert("Pessoa não encontrada.");
+
+        this.enviarLog("Pesquisa_Inicial: " + targetNode.label + " (" + targetNode.id + ")");
+
+        this.resetZoom();
 
         document.getElementById('intro-screen').style.display = 'none';
         document.getElementById('topControls').style.display = 'flex';
@@ -507,10 +534,15 @@ const app = {
             const node = evt.target;
             const data = node.data();
             const clickedId = parseInt(data.id);
+            const nodeCompleto = this.data.nodes.find(n => n.id === clickedId);
+            const nomeCompleto = nodeCompleto ? nodeCompleto.label : data.label;
             const infoBox = document.getElementById('info-box');
             document.getElementById('info-content').innerHTML = data.info;
             const btnFocus = document.getElementById('btnFocusNode');
-            btnFocus.onclick = () => { this.carregarGrafo(clickedId, this.state.direction); };
+            btnFocus.onclick = () => { 
+                this.enviarLog("Clicou_em: " + nomeCompleto + " (" + clickedId + ")");
+                this.carregarGrafo(clickedId, this.state.direction); 
+            };
             infoBox.style.display = 'block';
         });
 
