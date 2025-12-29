@@ -18,12 +18,10 @@
             font-family: 'Segoe UI', sans-serif; 
             background-color: #1a1a1a; 
             color: white; 
-            /* Começa com scroll ativado para ver a lista */
             overflow-y: auto; 
             overflow-x: hidden;
         }
 
-        /* Classe utilitária para travar o scroll quando o grafo abre */
         body.graph-mode { overflow: hidden; }
 
         /* --- ECRÃ DE ENTRADA (WRAPPER) --- */
@@ -35,7 +33,7 @@
             transition: opacity 0.5s;
         }
 
-        /* Secção 1: Busca (Ocupa 100vh) */
+        /* Secção 1: Busca */
         .hero-section {
             height: 100vh;
             display: flex;
@@ -53,7 +51,6 @@
         }
         h2 { margin: 0 0 20px 0; color: #61bffc; font-size: 28px; }
 
-        /* Seta a indicar scroll */
         .scroll-indicator {
             position: absolute; bottom: 30px;
             animation: bounce 2s infinite; opacity: 0.7; font-size: 24px; color: #888;
@@ -64,16 +61,61 @@
             60% {transform: translateY(-5px);}
         }
 
-        /* Secção 2: Lista Completa (Aparece com scroll) */
+        /* Secção 2: Lista Completa */
         #directory-section {
             padding: 50px 20px;
             background-color: #111;
             min-height: 50vh;
         }
         .directory-header {
-            text-align: center; margin-bottom: 40px; color: #61bffc;
+            text-align: center; margin-bottom: 30px; color: #61bffc;
         }
         
+        /* --- FILTROS (ATUALIZADO) --- */
+        .filter-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-label {
+            color: #888;
+            font-size: 14px;
+            margin-right: 5px;
+        }
+
+        .btn-filter {
+            background-color: #333;
+            color: #ddd;
+            border: 1px solid #555;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-filter:hover {
+            background-color: #444;
+            color: white;
+        }
+
+        /* Classe para o botão selecionado */
+        .btn-filter.active {
+            background-color: #2196F3; /* Azul */
+            border-color: #2196F3;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-order {
+            background-color: #222;
+            border: 1px solid #444;
+            color: #bbb;
+        }
+
         .directory-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -99,7 +141,8 @@
         input {
             width: 100%; padding: 12px; border-radius: 8px;
             border: 2px solid #444; background: #333; color: white;
-            font-size: 18px; text-align: center; box-sizing: border-box;
+            font-size: 16px; /* 16px para evitar zoom no iPhone */
+            text-align: center; box-sizing: border-box;
         }
         input:focus { border-color: #61bffc; outline: none; }
         .suggestions-box {
@@ -114,7 +157,7 @@
         }
         .suggestion-item:hover { background-color: #444; color: #61bffc; }
         
-        /* BOTÕES */
+        /* BOTÕES GERAIS */
         .btn-group { display: flex; gap: 15px; justify-content: center; }
         button {
             padding: 12px 24px; border: none; border-radius: 8px;
@@ -173,6 +216,17 @@
         <div class="directory-header">
             <h2>Diretório Completo</h2>
             <p>Clique num cartão para ver a árvore dessa pessoa</p>
+            
+            <div class="filter-controls">
+                <span class="filter-label">Ordenar por:</span>
+                
+                <button class="btn-filter" id="btnSortName" onclick="app.setSortBy('name')">Nome</button>
+                <button class="btn-filter" id="btnSortId" onclick="app.setSortBy('id')">Número</button>
+                
+                <span style="color:#444; margin: 0 5px;">|</span>
+                
+                <button class="btn-filter btn-order" id="btnSortOrder" onclick="app.toggleSortOrder()">Ordem: A-Z</button>
+            </div>
         </div>
         <div id="directory-grid" class="directory-grid">
             </div>
@@ -195,7 +249,7 @@
 const app = {
     data: null,
     cy: null,
-    state: { centerId: null, direction: 'up' },
+    state: { centerId: null, direction: 'up', sortBy: 'name', sortOrder: 'asc' },
     colors: {
         0: '#ffffff', 1: '#FF9800', 2: '#FF5722', 3: '#F44336', 
         '-1': '#4CAF50', '-2': '#009688', '-3': '#00BCD4'
@@ -204,11 +258,8 @@ const app = {
     resetZoom: function() {
         const viewport = document.querySelector("meta[name=viewport]");
         if (viewport) {
-            // Guarda o valor original
             const original = viewport.getAttribute("content");
-            // Força escala fixa
             viewport.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1");
-            // Devolve ao normal depois de um instante (para permitir zoom manual depois se quiseres)
             setTimeout(() => {
                 viewport.setAttribute("content", "width=device-width, initial-scale=1");
             }, 100);
@@ -216,7 +267,6 @@ const app = {
     },
 
     init: function() {
-        // Simulação de fetch (substituir pelo teu endpoint real)
         fetch('/api/grafo') 
             .then(res => res.json())
             .then(json => {
@@ -231,82 +281,105 @@ const app = {
                     status.style.color = "#4CAF50";
                     
                     this.setupAutocomplete();
-                    this.renderListaCompleta(); // <--- GERA A LISTA AO SCROLL
+                    this.renderListaCompleta();
                 }
             })
             .catch(e => console.error(e));
     },
 
-    // --- NOVA FUNÇÃO PARA DETERMINAR A COR DINAMICAMENTE ---
     getColorForLevel: function(level) {
-        if (level === 0) return '#ffffff'; // O próprio (Branco)
+        if (level === 0) return '#ffffff';
 
-        // Paletas de cores: do mais claro/próximo ao mais intenso/distante
-
-        // Ancestrais (Padrinhos, Avós...) -> VERMELHOS VIVOSS
-        const redPalette = [
-            '#FF8A65', // Lvl 1: Salmão vibrante
-            '#FF5722', // Lvl 2: Laranja avermelhado intenso
-            '#E64A19', // Lvl 3: Vermelho forte
-            '#D81B60', // Lvl 4: Rosa choque profundo
-            '#C2185B', // Lvl 5: Carmesim
-            '#880E4F'  // Lvl 6+: Bordô muito intenso
-        ];
-
-        // Descendentes (Afilhados, Netos...) -> AZUIS VIVOS
-        const bluePalette = [
-            '#4FC3F7', // Lvl -1: Azul celeste vibrante
-            '#03A9F4', // Lvl -2: Azul claro forte
-            '#0288D1', // Lvl -3: Azul cerúleo intenso
-            '#01579B', // Lvl -4: Azul marinho profundo
-            '#311B92',  // Lvl -5: Índigo profundo
-            '#1A237E'  // Lvl -6+: Azul noite muito intenso
-        ];
+        const redPalette = ['#FF8A65', '#FF5722', '#E64A19', '#D81B60', '#C2185B', '#880E4F'];
+        const bluePalette = ['#4FC3F7', '#03A9F4', '#0288D1', '#01579B', '#311B92', '#1A237E'];
 
         if (level > 0) {
-            // Usa o índice level-1. O Math.min garante que se o nível for muito alto, 
-            // usa a última cor da paleta em vez de dar erro.
             const index = Math.min(level - 1, redPalette.length - 1);
             return redPalette[index];
         } else {
-            // Usa o valor absoluto do nível para os negativos
             const absLevel = Math.abs(level);
             const index = Math.min(absLevel - 1, bluePalette.length - 1);
             return bluePalette[index];
         }
     },
-    // -------------------------------------------------------
 
-    // --- NOVA FUNÇÃO: RENDERIZAR LISTA NO SCROLL ---
+    // --- FUNÇÕES DE ORDENAÇÃO ATUALIZADAS ---
+    
+    // Define explicitamente se ordena por nome ou ID
+    setSortBy: function(type) {
+        this.state.sortBy = type;
+        // Reinicia a ordem para ascendente quando muda de categoria (opcional, mas usualmente melhor UX)
+        this.state.sortOrder = 'asc';
+        this.renderListaCompleta();
+    },
+
+    toggleSortOrder: function() {
+        this.state.sortOrder = (this.state.sortOrder === 'asc') ? 'desc' : 'asc';
+        this.renderListaCompleta();
+    },
+
+    // --- RENDERIZAR LISTA ---
     renderListaCompleta: function() {
         const grid = document.getElementById('directory-grid');
         grid.innerHTML = '';
 
-        // Ordenar alfabeticamente
-        const sortedNodes = [...this.data.nodes].sort((a, b) => 
-            (a.label || '').localeCompare(b.label || '')
-        );
+        // 1. Atualizar Visual dos Botões
+        const btnName = document.getElementById('btnSortName');
+        const btnId = document.getElementById('btnSortId');
+        const btnOrder = document.getElementById('btnSortOrder');
 
+        // Adiciona classe 'active' ao botão selecionado
+        if (this.state.sortBy === 'name') {
+            btnName.classList.add('active');
+            btnId.classList.remove('active');
+        } else {
+            btnName.classList.remove('active');
+            btnId.classList.add('active');
+        }
+        
+        // Texto do botão de ordem
+        let orderText = '';
+        if (this.state.sortOrder === 'asc') {
+            orderText = this.state.sortBy === 'name' ? 'A-Z' : 'Crescente (1-9)';
+        } else {
+            orderText = this.state.sortBy === 'name' ? 'Z-A' : 'Decrescente (9-1)';
+        }
+        btnOrder.innerHTML = `Ordem: ${orderText}`;
+
+
+        // 2. Ordenar Dados
+        const sortedNodes = [...this.data.nodes].sort((a, b) => {
+            let valA, valB;
+
+            if (this.state.sortBy === 'name') {
+                valA = (a.label || '').toLowerCase();
+                valB = (b.label || '').toLowerCase();
+                
+                if (this.state.sortOrder === 'asc') return valA.localeCompare(valB);
+                else return valB.localeCompare(valA);
+
+            } else {
+                valA = parseInt(a.id);
+                valB = parseInt(b.id);
+
+                if (this.state.sortOrder === 'asc') return valA - valB;
+                else return valB - valA;
+            }
+        });
+
+        // 3. Criar Cartões
         sortedNodes.forEach(node => {
             const card = document.createElement('div');
             card.className = 'person-card';
             
-            // Limpeza básica do nome (se tiver aspas, mostra o que está nelas)
-            let displayName = node.label;
-            // Opcional: Mostra o nome completo na lista, mas podes usar lógica de nickname se quiseres
-
             card.innerHTML = `
-                <div class="pc-name">${displayName}</div>
+                <div class="pc-name">${node.label}</div>
                 <div class="pc-id">#${node.id}</div>
             `;
 
-            // Ao clicar no cartão da lista
             card.onclick = () => {
-                // Preenche o input só para consistência
                 document.getElementById('studentId').value = node.id;
-                // Envia log
                 this.enviarLog("Clicou_em_Diretorio: " + node.label + " (" + node.id + ")");
-                // Inicia o grafo
                 this.iniciarGrafoViaClick(node.id);
             };
 
@@ -356,19 +429,14 @@ const app = {
         });
     },
 
-    // Função auxiliar para iniciar vindo da lista (default UP)
     iniciarGrafoViaClick: function(id) {
         document.getElementById('intro-screen').style.display = 'none';
         document.getElementById('topControls').style.display = 'flex';
-        
-        // TRAVAR O SCROLL DO BODY
         document.body.classList.add('graph-mode');
-
         this.carregarGrafo(id, 'up');
     },
 
     enviarLog: function(mensagem) {
-        // Envia um pedido silencioso ao servidor
         fetch('/api/log?msg=' + encodeURIComponent(mensagem))
             .catch(err => console.error(err)); 
     },
@@ -390,8 +458,6 @@ const app = {
 
         document.getElementById('intro-screen').style.display = 'none';
         document.getElementById('topControls').style.display = 'flex';
-        
-        // TRAVAR O SCROLL DO BODY
         document.body.classList.add('graph-mode');
 
         this.carregarGrafo(targetNode.id, direction);
