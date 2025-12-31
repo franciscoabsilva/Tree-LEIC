@@ -44,6 +44,24 @@
             position: relative;
         }
 
+        /* --- CRÉDITOS (NOVO) --- */
+        .credits {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.3); /* Transparente para ser subtil */
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            cursor: default;
+            z-index: 10;
+        }
+        .credits:hover {
+            color: #61bffc; /* Brilha quando passa o rato */
+            transform: scale(1.05);
+        }
+
         .card {
             background: #2d2d2d; padding: 40px; border-radius: 16px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center; width: 350px;
@@ -194,6 +212,9 @@
 
 <div id="intro-screen">
     <div class="hero-section">
+        
+        <div class="credits">Made with ❤️ by Wall•E</div>
+        
         <div class="card">
             <h2>Árvore LEIC</h2>
             <p>Número ou Nome:</p>
@@ -303,12 +324,9 @@ const app = {
         }
     },
 
-    // --- FUNÇÕES DE ORDENAÇÃO ATUALIZADAS ---
-    
-    // Define explicitamente se ordena por nome ou ID
+    // --- FUNÇÕES DE ORDENAÇÃO ---
     setSortBy: function(type) {
         this.state.sortBy = type;
-        // Reinicia a ordem para ascendente quando muda de categoria (opcional, mas usualmente melhor UX)
         this.state.sortOrder = 'asc';
         this.renderListaCompleta();
     },
@@ -328,7 +346,6 @@ const app = {
         const btnId = document.getElementById('btnSortId');
         const btnOrder = document.getElementById('btnSortOrder');
 
-        // Adiciona classe 'active' ao botão selecionado
         if (this.state.sortBy === 'name') {
             btnName.classList.add('active');
             btnId.classList.remove('active');
@@ -337,7 +354,6 @@ const app = {
             btnId.classList.add('active');
         }
         
-        // Texto do botão de ordem
         let orderText = '';
         if (this.state.sortOrder === 'asc') {
             orderText = this.state.sortBy === 'name' ? 'A-Z' : 'Crescente (1-9)';
