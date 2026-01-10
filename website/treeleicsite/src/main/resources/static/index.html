@@ -44,13 +44,13 @@
             position: relative;
         }
 
-        /* --- CRÉDITOS (NOVO) --- */
+        /* --- CRÉDITOS (Topo Esquerdo) --- */
         .credits {
             position: absolute;
             top: 25px;
             right: 25px;
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.3); /* Transparente para ser subtil */
+            color: rgba(255, 255, 255, 0.3);
             font-weight: 600;
             letter-spacing: 0.5px;
             transition: all 0.3s ease;
@@ -58,8 +58,34 @@
             z-index: 10;
         }
         .credits:hover {
-            color: #61bffc; /* Brilha quando passa o rato */
+            color: #61bffc;
             transform: scale(1.05);
+        }
+
+        /* --- BOTÃO ÁRVORE COMPLETA (Topo Direito - NOVO SITIO) --- */
+        .btn-top-left {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background-color: #9C27B0; /* Roxo */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px; /* Mais arredondado para parecer "floating" */
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4); /* Sombra roxa */
+            z-index: 10;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-top-left:hover {
+            transform: scale(1.05);
+            background-color: #AB47BC;
+            box-shadow: 0 6px 20px rgba(156, 39, 176, 0.6);
         }
 
         .card {
@@ -89,7 +115,7 @@
             text-align: center; margin-bottom: 30px; color: #61bffc;
         }
         
-        /* --- FILTROS (ATUALIZADO) --- */
+        /* --- FILTROS --- */
         .filter-controls {
             display: flex;
             justify-content: center;
@@ -99,40 +125,20 @@
             flex-wrap: wrap;
         }
         
-        .filter-label {
-            color: #888;
-            font-size: 14px;
-            margin-right: 5px;
-        }
+        .filter-label { color: #888; font-size: 14px; margin-right: 5px; }
 
         .btn-filter {
-            background-color: #333;
-            color: #ddd;
-            border: 1px solid #555;
-            padding: 8px 16px;
-            font-size: 14px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: 0.2s;
+            background-color: #333; color: #ddd; border: 1px solid #555;
+            padding: 8px 16px; font-size: 14px; border-radius: 20px;
+            cursor: pointer; transition: 0.2s;
         }
-        .btn-filter:hover {
-            background-color: #444;
-            color: white;
-        }
-
-        /* Classe para o botão selecionado */
+        .btn-filter:hover { background-color: #444; color: white; }
         .btn-filter.active {
-            background-color: #2196F3; /* Azul */
-            border-color: #2196F3;
-            color: white;
-            font-weight: bold;
+            background-color: #2196F3; border-color: #2196F3;
+            color: white; font-weight: bold;
         }
 
-        .btn-order {
-            background-color: #222;
-            border: 1px solid #444;
-            color: #bbb;
-        }
+        .btn-order { background-color: #222; border: 1px solid #444; color: #bbb; }
 
         .directory-grid {
             display: grid;
@@ -159,8 +165,7 @@
         input {
             width: 100%; padding: 12px; border-radius: 8px;
             border: 2px solid #444; background: #333; color: white;
-            font-size: 16px; /* 16px para evitar zoom no iPhone */
-            text-align: center; box-sizing: border-box;
+            font-size: 16px; text-align: center; box-sizing: border-box;
         }
         input:focus { border-color: #61bffc; outline: none; }
         .suggestions-box {
@@ -176,7 +181,7 @@
         .suggestion-item:hover { background-color: #444; color: #61bffc; }
         
         /* BOTÕES GERAIS */
-        .btn-group { display: flex; gap: 15px; justify-content: center; }
+        .btn-group { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
         button {
             padding: 12px 24px; border: none; border-radius: 8px;
             cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s;
@@ -184,7 +189,7 @@
         button:hover { transform: scale(1.05); filter: brightness(1.1); }
         .btn-up { background-color: #FF9800; color: white; }
         .btn-down { background-color: #4CAF50; color: white; }
-
+        
         /* CONTROLS (Graph Mode) */
         .top-controls {
             position: absolute; top: 20px; left: 20px; right: 20px; z-index: 50;
@@ -213,8 +218,12 @@
 <div id="intro-screen">
     <div class="hero-section">
         
-        <div class="credits">Made with ❤️ by Wall•E</div>
+        <div class="credits">made with ❤️ by Wall•E</div>
         
+        <button class="btn-top-left" onclick="app.carregarArvoreCompleta()">
+            🌳 Ver Árvore Completa
+        </button>
+
         <div class="card">
             <h2>Árvore LEIC</h2>
             <p>Número ou Nome:</p>
@@ -240,12 +249,9 @@
             
             <div class="filter-controls">
                 <span class="filter-label">Ordenar por:</span>
-                
                 <button class="btn-filter" id="btnSortName" onclick="app.setSortBy('name')">Nome</button>
                 <button class="btn-filter" id="btnSortId" onclick="app.setSortBy('id')">Número</button>
-                
                 <span style="color:#444; margin: 0 5px;">|</span>
-                
                 <button class="btn-filter btn-order" id="btnSortOrder" onclick="app.toggleSortOrder()">Ordem: A-Z</button>
             </div>
         </div>
@@ -324,7 +330,7 @@ const app = {
         }
     },
 
-    // --- FUNÇÕES DE ORDENAÇÃO ---
+    // --- ORDENAÇÃO ---
     setSortBy: function(type) {
         this.state.sortBy = type;
         this.state.sortOrder = 'asc';
@@ -336,12 +342,10 @@ const app = {
         this.renderListaCompleta();
     },
 
-    // --- RENDERIZAR LISTA ---
     renderListaCompleta: function() {
         const grid = document.getElementById('directory-grid');
         grid.innerHTML = '';
 
-        // 1. Atualizar Visual dos Botões
         const btnName = document.getElementById('btnSortName');
         const btnId = document.getElementById('btnSortId');
         const btnOrder = document.getElementById('btnSortOrder');
@@ -362,43 +366,33 @@ const app = {
         }
         btnOrder.innerHTML = `Ordem: ${orderText}`;
 
-
-        // 2. Ordenar Dados
         const sortedNodes = [...this.data.nodes].sort((a, b) => {
             let valA, valB;
-
             if (this.state.sortBy === 'name') {
                 valA = (a.label || '').toLowerCase();
                 valB = (b.label || '').toLowerCase();
-                
                 if (this.state.sortOrder === 'asc') return valA.localeCompare(valB);
                 else return valB.localeCompare(valA);
-
             } else {
                 valA = parseInt(a.id);
                 valB = parseInt(b.id);
-
                 if (this.state.sortOrder === 'asc') return valA - valB;
                 else return valB - valA;
             }
         });
 
-        // 3. Criar Cartões
         sortedNodes.forEach(node => {
             const card = document.createElement('div');
             card.className = 'person-card';
-            
             card.innerHTML = `
                 <div class="pc-name">${node.label}</div>
                 <div class="pc-id">#${node.id}</div>
             `;
-
             card.onclick = () => {
                 document.getElementById('studentId').value = node.id;
                 this.enviarLog("Clicou_em_Diretorio: " + node.label + " (" + node.id + ")");
                 this.iniciarGrafoViaClick(node.id);
             };
-
             grid.appendChild(card);
         });
     },
@@ -406,15 +400,25 @@ const app = {
     setupAutocomplete: function() {
         const input = document.getElementById('studentId');
         const box = document.getElementById('suggestions');
+        const cleanStr = (str) => {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        };
 
         input.addEventListener('input', () => {
-            const term = input.value.toLowerCase().trim();
+            const rawTerm = input.value.trim();
+            const term = cleanStr(rawTerm);
             box.innerHTML = '';
-            if (term.length < 1) { box.style.display = 'none'; return; }
+            if (rawTerm.length < 1) { box.style.display = 'none'; return; }
 
-            const matches = this.data.nodes.filter(n => 
-                String(n.id).includes(term) || (n.label && n.label.toLowerCase().includes(term))
-            ).slice(0, 5);
+            const matches = this.data.nodes.filter(n => {
+                if (String(n.id).includes(term)) return true;
+                if (n.label) {
+                    const labelClean = cleanStr(n.label);
+                    const searchWords = term.split(/\s+/);
+                    return searchWords.every(word => labelClean.includes(word));
+                }
+                return false;
+            }).slice(0, 100);
 
             if (matches.length > 0) {
                 matches.forEach(match => {
@@ -448,8 +452,59 @@ const app = {
     iniciarGrafoViaClick: function(id) {
         document.getElementById('intro-screen').style.display = 'none';
         document.getElementById('topControls').style.display = 'flex';
+        // Mostra o botão de mudar modo se estiver escondido
+        document.getElementById('btnToggleMode').style.display = 'block';
         document.body.classList.add('graph-mode');
         this.carregarGrafo(id, 'up');
+    },
+
+    // --- CARREGAR ÁRVORE COMPLETA ---
+    carregarArvoreCompleta: function() {
+        if (!this.data) return alert("Aguarde o carregamento...");
+
+        this.enviarLog("Ver_Arvore_Completa");
+        this.resetZoom();
+
+        // 1. Preparar UI
+        document.getElementById('intro-screen').style.display = 'none';
+        document.getElementById('topControls').style.display = 'flex';
+        // Esconde o botão de mudar modo pq na arvore completa não há direção
+        document.getElementById('btnToggleMode').style.display = 'none';
+        
+        document.body.classList.add('graph-mode');
+        document.getElementById('info-box').style.display = 'none';
+
+        // 2. Preparar TODOS os nós (sem filtrar)
+        const cyNodes = this.data.nodes.map(node => {
+            let textoBola = node.label || String(node.id);
+            if (textoBola.includes('"')) {
+                const match = textoBola.match(/"(.*?)"/);
+                if (match) textoBola = `"${match[1]}"`;
+            } else {
+                textoBola = textoBola.split(' ')[0]; 
+            }
+
+            return {
+                data: {
+                    id: String(node.id),
+                    label: textoBola,
+                    level: 0, // Cor Branca para todos
+                    info: node.title
+                },
+                style: {
+                    'background-color': '#ffffff',
+                    'border-width': 0
+                }
+            };
+        });
+
+        // 3. Preparar TODAS as ligações
+        const cyEdges = this.data.edges.map(edge => {
+            return { data: { source: edge.from, target: edge.to } };
+        });
+
+        // 4. Renderizar
+        this.renderGraph([...cyNodes, ...cyEdges]);
     },
 
     enviarLog: function(mensagem) {
@@ -469,11 +524,11 @@ const app = {
         if (!targetNode) return alert("Pessoa não encontrada.");
 
         this.enviarLog("Pesquisa_Inicial: " + targetNode.label + " (" + targetNode.id + ")");
-
         this.resetZoom();
 
         document.getElementById('intro-screen').style.display = 'none';
         document.getElementById('topControls').style.display = 'flex';
+        document.getElementById('btnToggleMode').style.display = 'block';
         document.body.classList.add('graph-mode');
 
         this.carregarGrafo(targetNode.id, direction);
@@ -577,7 +632,7 @@ const app = {
     },
 
     renderGraph: function(elements) {
-        if(this.cy) this.cy.destroy(); // Limpar anterior para evitar bugs
+        if(this.cy) this.cy.destroy(); 
 
         this.cy = cytoscape({
             container: document.getElementById('cy'),
@@ -624,6 +679,8 @@ const app = {
             btnFocus.onclick = () => { 
                 this.enviarLog("Clicou_em: " + nomeCompleto + " (" + clickedId + ")");
                 this.carregarGrafo(clickedId, this.state.direction); 
+                // Se estivermos no modo "Árvore Completa", reativamos o botão de mudar modo
+                document.getElementById('btnToggleMode').style.display = 'block';
             };
             infoBox.style.display = 'block';
         });
