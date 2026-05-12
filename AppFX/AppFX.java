@@ -6,7 +6,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class AppFX extends Application {
-    private ArvoreLEIC arvore; 
+    private Manager arvore; 
 
     @Override
     public void start(Stage primaryStage) throws IOException {
